@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --haze-bg: #0f1419;
+  --haze-panel: #1a222c;
+  --haze-border: #2a3544;
+  --haze-accent: #7cbf6a;
+  --haze-accent-2: #c4a35a;
+  --haze-text: #eef2f6;
+  --haze-muted: #9aa8b8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(124, 191, 106, 0.18), transparent),
+    radial-gradient(900px 500px at 100% 0%, rgba(196, 163, 90, 0.12), transparent),
+    var(--haze-bg);
+  color: var(--haze-text);
+}
+
+a {
+  color: inherit;
+}
