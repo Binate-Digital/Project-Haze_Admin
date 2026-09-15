@@ -60,9 +60,9 @@ export function AdminLayout() {
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 shrink-0 border-r border-[var(--haze-border)] bg-[var(--haze-panel)] p-5 flex flex-col">
-        <div className="mb-10 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[var(--haze-accent)]/20 flex items-center justify-center">
-            <Leaf className="h-5 w-5 text-[var(--haze-accent)]" />
+        <div className="mb-10 flex items-center justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--haze-accent)]/20">
+            <Leaf className="h-8 w-8 text-[var(--haze-accent)]" />
           </div>
         </div>
 
