@@ -1,12 +1,34 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, LogOut, Leaf } from 'lucide-react'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import {
+  LayoutDashboard,
+  Building2,
+  FileText,
+  GraduationCap,
+  Megaphone,
+  Package,
+  Scale,
+  LogOut,
+  Leaf,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth.store'
 import { getApiErrorMessage } from '@/services/api'
+import { NAV_ITEMS, ROUTES } from '@/config'
+
+const ICONS: Record<string, typeof LayoutDashboard> = {
+  [ROUTES.DASHBOARD]: LayoutDashboard,
+  [ROUTES.BUSINESSES]: Building2,
+  [ROUTES.BLOGS]: FileText,
+  [ROUTES.EDUCATION]: GraduationCap,
+  [ROUTES.ADS]: Megaphone,
+  [ROUTES.PACKAGES]: Package,
+  [ROUTES.LEGAL]: Scale,
+}
 
 export function AdminLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const user = useAuthStore((s) => s.user)
   const logoutStore = useAuthStore((s) => s.logout)
 
@@ -23,6 +45,11 @@ export function AdminLayout() {
     }
   }
 
+  const isActive = (to: string) => {
+    if (to === '/') return location.pathname === '/'
+    return location.pathname === to || location.pathname.startsWith(`${to}/`)
+  }
+
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 shrink-0 border-r border-[var(--haze-border)] bg-[var(--haze-panel)] p-5 flex flex-col">
@@ -37,13 +64,24 @@ export function AdminLayout() {
         </div>
 
         <nav className="space-y-1 flex-1">
-          <Link
-            to="/"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm bg-[var(--haze-accent)]/15 text-[var(--haze-accent)]"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </Link>
+          {NAV_ITEMS.map((item) => {
+            const Icon = ICONS[item.to] || LayoutDashboard
+            const active = isActive(item.to)
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                  active
+                    ? 'bg-[var(--haze-accent)]/15 text-[var(--haze-accent)]'
+                    : 'text-[var(--haze-muted)] hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="border-t border-[var(--haze-border)] pt-4 mt-4">
