@@ -159,4 +159,24 @@ export const adminApi = {
     const { data } = await api.delete<ApiEnvelope<unknown>>(`/admin/delete-legal-content/${id}`)
     return unwrap(data, data.message)
   },
+
+  // Profile
+  getProfile: async () => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>>>('/admin/profile')
+    return unwrap(data)
+  },
+  updateProfile: async (form: FormData) => {
+    const { data } = await api.patch<ApiEnvelope<Record<string, unknown>>>('/admin/profile', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return unwrap(data, data.message)
+  },
+  updatePassword: async (payload: {
+    currentPassword: string
+    newPassword: string
+    confirmPassword: string
+  }) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>('/admin/update-password', payload)
+    return unwrap(data, data.message)
+  },
 }

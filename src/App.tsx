@@ -14,6 +14,8 @@ import EducationPage from '@/pages/education/EducationPage'
 import AdsPage from '@/pages/ads/AdsPage'
 import PackagesPage from '@/pages/packages/PackagesPage'
 import LegalPage from '@/pages/legal/LegalPage'
+import ProfilePage from '@/pages/profile/ProfilePage'
+import UpdatePasswordPage from '@/pages/profile/UpdatePasswordPage'
 import { useAuthStore } from '@/store/auth.store'
 import { ROUTES } from '@/config'
 
@@ -45,6 +47,8 @@ export default function App() {
             <Route path={ROUTES.ADS} element={<AdsPage />} />
             <Route path={ROUTES.PACKAGES} element={<PackagesPage />} />
             <Route path={ROUTES.LEGAL} element={<LegalPage />} />
+            <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
+            <Route path={ROUTES.UPDATE_PASSWORD} element={<UpdatePasswordPage />} />
           </Route>
         </Route>
 

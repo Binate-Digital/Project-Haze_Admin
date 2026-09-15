@@ -15,6 +15,8 @@ export const ROUTES = {
   ADS: '/ads',
   PACKAGES: '/packages',
   LEGAL: '/legal',
+  PROFILE: '/profile',
+  UPDATE_PASSWORD: '/update-password',
 } as const
 
 export const STORAGE_KEYS = {
