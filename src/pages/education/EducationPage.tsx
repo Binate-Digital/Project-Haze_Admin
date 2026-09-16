@@ -31,6 +31,7 @@ function newLesson(order = 1): LessonDraft {
 
 export default function EducationPage() {
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
+  const [courses, setCourses] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -42,8 +43,12 @@ export default function EducationPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getPendingContributions()
-      setRows(Array.isArray(data) ? data : [])
+      const [contrib, courseList] = await Promise.all([
+        adminApi.getPendingContributions(),
+        adminApi.listCourses(),
+      ])
+      setRows(Array.isArray(contrib) ? contrib : [])
+      setCourses(Array.isArray(courseList) ? courseList : [])
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
@@ -90,10 +95,34 @@ export default function EducationPage() {
       setTopic('')
       setLessons([newLesson(1)])
       setCoverFiles([])
+      await load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const togglePublish = async (course: Record<string, unknown>) => {
+    try {
+      const form = new FormData()
+      form.append('isPublished', String(!(course.isPublished === true)))
+      await adminApi.updateCourse(String(course._id), form)
+      toast.success(course.isPublished ? 'Course unpublished' : 'Course published')
+      await load()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const removeCourse = async (courseId: string) => {
+    if (!window.confirm('Delete this course?')) return
+    try {
+      await adminApi.deleteCourse(courseId)
+      toast.success('Course deleted')
+      await load()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
     }
   }
 
@@ -199,6 +228,46 @@ export default function EducationPage() {
           {saving ? 'Publishing…' : 'Publish course'}
         </Button>
       </Card>
+
+      <div>
+        <h2 className="mb-3 text-lg font-medium">All courses</h2>
+        {loading ? (
+          <p className="text-sm text-[var(--haze-muted)]">Loading…</p>
+        ) : courses.length === 0 ? (
+          <EmptyState message="No courses yet." />
+        ) : (
+          <div className="mb-8 space-y-3">
+            {courses.map((course) => (
+              <Card
+                key={String(course._id)}
+                className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium">{String(course.title)}</h3>
+                    <Badge tone={course.isPublished ? 'ok' : 'warn'}>
+                      {course.isPublished ? 'published' : 'draft'}
+                    </Badge>
+                    {course.isTrending ? <Badge>trending</Badge> : null}
+                  </div>
+                  <p className="text-sm text-[var(--haze-muted)]">
+                    {String(course.topic || course.category || 'No topic')} ·{' '}
+                    {String(course.totalLessons || 0)} lessons
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={() => void togglePublish(course)}>
+                    {course.isPublished ? 'Unpublish' : 'Publish'}
+                  </Button>
+                  <Button variant="danger" onClick={() => void removeCourse(String(course._id))}>
+                    Delete
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div>
         <h2 className="mb-3 text-lg font-medium">Pending contributions</h2>

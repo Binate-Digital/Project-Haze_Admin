@@ -179,4 +179,86 @@ export const adminApi = {
     const { data } = await api.post<ApiEnvelope<unknown>>('/admin/update-password', payload)
     return unwrap(data, data.message)
   },
+
+  // Analytics
+  getAnalyticsOverview: async () => {
+    const { data } = await api.get<ApiEnvelope<Record<string, number>>>('/admin/analytics/overview')
+    return unwrap(data)
+  },
+
+  // Users
+  listUsers: async (params?: { role?: string; q?: string }) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/users', {
+      params,
+    })
+    return unwrap(data)
+  },
+  setUserBlocked: async (userId: string, blocked: boolean) => {
+    const { data } = await api.patch<ApiEnvelope<unknown>>(`/admin/users/${userId}/block`, {
+      blocked,
+    })
+    return unwrap(data, data.message)
+  },
+  createSubAdmin: async (payload: { email: string; password: string; fullName?: string }) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>('/admin/users/sub-admin', payload)
+    return unwrap(data, data.message)
+  },
+
+  // Push blast
+  sendNotificationBlast: async (payload: {
+    title: string
+    body: string
+    audience: 'all' | 'users' | 'business'
+  }) => {
+    const { data } = await api.post<ApiEnvelope<Record<string, unknown>>>(
+      '/admin/notifications/blast',
+      payload,
+    )
+    return unwrap(data, data.message)
+  },
+
+  // Reports
+  listReports: async (status?: string) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/reports', {
+      params: status ? { status } : undefined,
+    })
+    return unwrap(data)
+  },
+  reviewReport: async (
+    reportId: string,
+    payload: { status: 'reviewed' | 'dismissed' | 'pending'; blockUser?: boolean },
+  ) => {
+    const { data } = await api.patch<ApiEnvelope<unknown>>(`/admin/reports/${reportId}`, payload)
+    return unwrap(data, data.message)
+  },
+
+  // Orders / refunds
+  listOrders: async (params?: { status?: string; paymentStatus?: string }) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/orders', {
+      params,
+    })
+    return unwrap(data)
+  },
+  refundOrder: async (orderId: string, reason?: string) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>(`/admin/orders/${orderId}/refund`, {
+      reason,
+    })
+    return unwrap(data, data.message)
+  },
+
+  // Courses CMS
+  listCourses: async () => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/courses')
+    return unwrap(data)
+  },
+  updateCourse: async (courseId: string, form: FormData) => {
+    const { data } = await api.patch<ApiEnvelope<unknown>>(`/admin/courses/${courseId}`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return unwrap(data, data.message)
+  },
+  deleteCourse: async (courseId: string) => {
+    const { data } = await api.delete<ApiEnvelope<unknown>>(`/admin/courses/${courseId}`)
+    return unwrap(data, data.message)
+  },
 }

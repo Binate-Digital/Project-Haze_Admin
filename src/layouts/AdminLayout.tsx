@@ -12,6 +12,11 @@ import {
   UserRound,
   KeyRound,
   ChevronDown,
+  Users,
+  Bell,
+  Flag,
+  ShoppingBag,
+  BarChart3,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
@@ -21,11 +26,16 @@ import { NAV_ITEMS, ROUTES } from '@/config'
 
 const ICONS: Record<string, typeof LayoutDashboard> = {
   [ROUTES.DASHBOARD]: LayoutDashboard,
+  [ROUTES.ANALYTICS]: BarChart3,
   [ROUTES.BUSINESSES]: Building2,
+  [ROUTES.USERS]: Users,
   [ROUTES.BLOGS]: FileText,
   [ROUTES.EDUCATION]: GraduationCap,
   [ROUTES.ADS]: Megaphone,
+  [ROUTES.ORDERS]: ShoppingBag,
   [ROUTES.PACKAGES]: Package,
+  [ROUTES.NOTIFICATIONS]: Bell,
+  [ROUTES.REPORTS]: Flag,
   [ROUTES.LEGAL]: Scale,
 }
 
@@ -66,7 +76,7 @@ export function AdminLayout() {
           </div>
         </div>
 
-        <nav className="space-y-1 flex-1">
+        <nav className="space-y-1 flex-1 overflow-y-auto pr-1">
           {NAV_ITEMS.map((item) => {
             const Icon = ICONS[item.to] || LayoutDashboard
             const active = isActive(item.to)
