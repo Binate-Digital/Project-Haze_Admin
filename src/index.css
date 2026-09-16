@@ -1,13 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --haze-bg: #0f1419;
-  --haze-panel: #1a222c;
-  --haze-border: #2a3544;
-  --haze-accent: #7cbf6a;
-  --haze-accent-2: #c4a35a;
-  --haze-text: #eef2f6;
-  --haze-muted: #9aa8b8;
+  /* Brand: purple → green gradient + neon logo green */
+  --haze-purple: #7a00a3;
+  --haze-purple-deep: #5a0080;
+  --haze-mid: #3d4f5c;
+  --haze-green: #2bb14b;
+  --haze-neon: #39ff14;
+  --haze-neon-soft: #7cff3a;
+
+  --haze-bg: #0c1210;
+  --haze-panel: #141c18;
+  --haze-border: #2a3a32;
+  --haze-accent: #39ff14;
+  --haze-accent-2: #7a00a3;
+  --haze-text: #f2f7f3;
+  --haze-muted: #a3b5aa;
 }
 
 * {
@@ -28,8 +36,8 @@ body {
     -apple-system,
     sans-serif;
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(124, 191, 106, 0.18), transparent),
-    radial-gradient(900px 500px at 100% 0%, rgba(196, 163, 90, 0.12), transparent),
+    radial-gradient(1000px 520px at 8% -8%, rgba(122, 0, 163, 0.28), transparent),
+    radial-gradient(900px 480px at 100% 0%, rgba(57, 255, 20, 0.1), transparent),
     var(--haze-bg);
   color: var(--haze-text);
 }

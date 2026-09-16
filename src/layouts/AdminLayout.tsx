@@ -23,6 +23,8 @@ import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth.store'
 import { getApiErrorMessage } from '@/services/api'
 import { NAV_ITEMS, ROUTES } from '@/config'
+import logo from '@/assets/logo.png'
+import bg1 from '@/assets/bg1.png'
 
 const ICONS: Record<string, typeof LayoutDashboard> = {
   [ROUTES.DASHBOARD]: LayoutDashboard,
@@ -69,11 +71,20 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 shrink-0 border-r border-[var(--haze-border)] bg-[var(--haze-panel)] p-5 flex flex-col">
-        <div className="mb-10 flex items-center justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--haze-accent)]/20">
-            <Leaf className="h-8 w-8 text-[var(--haze-accent)]" />
-          </div>
+      <aside
+        className="w-64 shrink-0 p-5 flex flex-col border-r border-white/10 rounded-r-3xl shadow-[8px_0_30px_rgba(0,0,0,0.25)]"
+        style={{
+          backgroundImage: `url(${bg1})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="mb-8 flex items-center justify-center">
+          <img
+            src={logo}
+            alt="Haze"
+            className="h-28 w-auto object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.4)]"
+          />
         </div>
 
         <nav className="space-y-1 flex-1 overflow-y-auto pr-1">
@@ -84,13 +95,19 @@ export function AdminLayout() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                   active
-                    ? 'bg-[var(--haze-accent)]/15 text-[var(--haze-accent)]'
-                    : 'text-[var(--haze-muted)] hover:bg-white/5 hover:text-white'
+                    ? 'bg-black/25 text-[var(--haze-neon)] shadow-[0_0_18px_rgba(57,255,20,0.25)]'
+                    : 'text-white/85 hover:bg-black/20 hover:text-[var(--haze-neon)]'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon
+                  className={`h-4 w-4 transition ${
+                    active
+                      ? 'text-[var(--haze-neon)]'
+                      : 'text-white/70 group-hover:text-[var(--haze-neon)]'
+                  }`}
+                />
                 {item.label}
               </Link>
             )
@@ -103,7 +120,7 @@ export function AdminLayout() {
           <div className="group relative">
             <button
               type="button"
-              className="flex items-center gap-3 rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)]/60 px-3 py-2 transition hover:border-[var(--haze-accent)]/40"
+              className="flex items-center gap-3 rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)]/60 px-3 py-2 transition hover:border-[var(--haze-neon)]/50"
             >
               {avatarUrl ? (
                 <img
@@ -112,8 +129,8 @@ export function AdminLayout() {
                   className="h-9 w-9 rounded-full object-cover border border-[var(--haze-border)]"
                 />
               ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--haze-accent)]/20">
-                  <Leaf className="h-4 w-4 text-[var(--haze-accent)]" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--haze-accent)]/15">
+                  <Leaf className="h-4 w-4 text-[var(--haze-neon)]" />
                 </div>
               )}
               <div className="hidden text-left sm:block max-w-[180px]">
@@ -131,14 +148,14 @@ export function AdminLayout() {
                 </div>
                 <Link
                   to={ROUTES.PROFILE}
-                  className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--haze-muted)] hover:bg-white/5 hover:text-white"
+                  className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--haze-muted)] hover:bg-white/5 hover:text-[var(--haze-neon)]"
                 >
                   <UserRound className="h-4 w-4" />
                   Profile
                 </Link>
                 <Link
                   to={ROUTES.UPDATE_PASSWORD}
-                  className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--haze-muted)] hover:bg-white/5 hover:text-white"
+                  className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--haze-muted)] hover:bg-white/5 hover:text-[var(--haze-neon)]"
                 >
                   <KeyRound className="h-4 w-4" />
                   Update password
