@@ -3,7 +3,30 @@ import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Badge, Button, Card, PageHeader } from '@/components/ui'
+import { Badge, Button, Card, MediaPreviewCard, PageHeader } from '@/components/ui'
+
+const DOC_FIELDS = [
+  { key: 'retailLicenseImg', label: 'Retail license' },
+  { key: 'businessRegistrationCertificate', label: 'Business registration' },
+  { key: 'permit', label: 'Permit' },
+  { key: 'anyOtherRequiredQualifications', label: 'Other qualifications' },
+] as const
+
+function formatAddress(address: unknown) {
+  if (!address || typeof address !== 'object') return null
+  const a = address as Record<string, unknown>
+  const parts = [
+    a.streetAddress,
+    a.aptSuite || a.apartmentSuiteFloor,
+    a.floor,
+    a.city,
+    a.state,
+    a.zipCode,
+  ]
+    .map((v) => (typeof v === 'string' ? v.trim() : ''))
+    .filter(Boolean)
+  return parts.length ? parts.join(', ') : null
+}
 
 export default function BusinessDetailPage() {
   const { businessId = '' } = useParams()
@@ -75,12 +98,17 @@ export default function BusinessDetailPage() {
 
   const store = (data.store || data) as Record<string, unknown>
   const user = (data.user || data.businessUserId || {}) as Record<string, unknown>
+  const addressText = formatAddress(store.address)
+  const documents = DOC_FIELDS.map((doc) => ({
+    ...doc,
+    url: typeof store[doc.key] === 'string' ? String(store[doc.key]) : '',
+  })).filter((doc) => doc.url)
 
   return (
     <div className="space-y-6 max-w-4xl">
       <PageHeader
         title={String(store.storeName || 'Business details')}
-        description="Review legal documents and registration details."
+        description="Review store info and uploaded documents."
         actions={
           <>
             <Link to="/businesses">
@@ -94,55 +122,44 @@ export default function BusinessDetailPage() {
         }
       />
 
-      <Card className="space-y-3">
-        <div className="flex items-center gap-2">
+      <Card className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge tone="warn">{String(store.verificationStatus || 'unknown')}</Badge>
           <span className="text-sm text-[var(--haze-muted)]">
             {String(user.email || user.businessName || user.fullName || '')}
           </span>
         </div>
-        <p className="text-sm whitespace-pre-wrap">{String(store.description || 'No description')}</p>
-        <pre className="overflow-auto rounded-xl bg-black/30 p-3 text-xs text-[var(--haze-muted)]">
-          {JSON.stringify(
-            {
-              address: store.address,
-              documents: {
-                retailLicenseImg: store.retailLicenseImg,
-                businessRegistrationCertificate: store.businessRegistrationCertificate,
-                permit: store.permit,
-                anyOtherRequiredQualifications: store.anyOtherRequiredQualifications,
-              },
-              subscriptionStatus: store.subscriptionStatus,
-            },
-            null,
-            2,
-          )}
-        </pre>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[
-            'retailLicenseImg',
-            'businessRegistrationCertificate',
-            'permit',
-            'anyOtherRequiredQualifications',
-          ]
-            .map((key) => {
-              const url = store[key]
-              if (!url || typeof url !== 'string') return null
-              return (
-                <a
-                  key={key}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-xl border border-[var(--haze-border)] px-3 py-2 text-sm text-[var(--haze-accent)] hover:bg-white/5"
-                >
-                  Open {key}
-                </a>
-              )
-            })
-            .filter(Boolean)}
+
+        <p className="text-sm whitespace-pre-wrap">
+          {String(store.description || 'No description')}
+        </p>
+
+        <div className="grid gap-3 sm:grid-cols-2 text-sm">
+          <div className="rounded-xl border border-[var(--haze-border)] px-3 py-2.5">
+            <p className="text-xs text-[var(--haze-muted)]">Address</p>
+            <p className="mt-1">{addressText || 'Not provided'}</p>
+          </div>
+          <div className="rounded-xl border border-[var(--haze-border)] px-3 py-2.5">
+            <p className="text-xs text-[var(--haze-muted)]">Subscription</p>
+            <p className="mt-1 capitalize">{String(store.subscriptionStatus || 'none')}</p>
+          </div>
         </div>
       </Card>
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium">Documents</h2>
+        {documents.length === 0 ? (
+          <Card>
+            <p className="text-sm text-[var(--haze-muted)]">No documents uploaded.</p>
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {documents.map((doc) => (
+              <MediaPreviewCard key={doc.key} label={doc.label} url={doc.url} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

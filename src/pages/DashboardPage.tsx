@@ -123,14 +123,6 @@ export default function DashboardPage() {
           })}
         </div>
       )}
-
-      <div className="rounded-2xl border border-[var(--haze-border)] bg-[var(--haze-panel)] p-6">
-        <h2 className="text-lg font-medium">Admin modules</h2>
-        <p className="mt-2 text-sm text-[var(--haze-muted)] leading-relaxed">
-          Use the sidebar for business verification, blogs, education CMS, ads moderation,
-          subscription packages, and legal content — aligned with existing `/admin` APIs.
-        </p>
-      </div>
     </div>
   )
 }

@@ -125,7 +125,7 @@ export default function PackagesPage() {
     <div className="space-y-8">
       <PageHeader
         title="Subscription packages"
-        description="TRD 3.3 — manage store and ads subscription plans."
+        description="Manage store and ads subscription plans."
         actions={<Button onClick={() => void load()}>Refresh</Button>}
       />
 

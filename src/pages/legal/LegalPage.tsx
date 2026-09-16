@@ -104,7 +104,7 @@ export default function LegalPage() {
     <div className="space-y-8">
       <PageHeader
         title="Legal content"
-        description="TRD 3.6 — manage terms & conditions and privacy policy."
+        description="Manage terms & conditions and privacy policy."
         actions={<Button onClick={() => void load()}>Refresh</Button>}
       />
 

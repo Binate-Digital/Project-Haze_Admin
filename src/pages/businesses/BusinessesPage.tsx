@@ -58,7 +58,7 @@ export default function BusinessesPage() {
     <div>
       <PageHeader
         title="Business verification"
-        description="TRD 3.2 — review pending store registrations and documents."
+        description="Review pending store registrations and documents."
         actions={<Button onClick={() => void load()}>Refresh</Button>}
       />
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { Plus, Trash2 } from 'lucide-react'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
 import {
@@ -8,10 +9,25 @@ import {
   Card,
   EmptyState,
   Field,
+  FileUpload,
   PageHeader,
   inputClass,
   textareaClass,
 } from '@/components/ui'
+
+type LessonDraft = {
+  id: string
+  name: string
+  content: string
+}
+
+function newLesson(order = 1): LessonDraft {
+  return {
+    id: `${Date.now()}-${order}`,
+    name: order === 1 ? 'Intro' : `Lesson ${order}`,
+    content: '',
+  }
+}
 
 export default function EducationPage() {
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
@@ -19,10 +35,8 @@ export default function EducationPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [topic, setTopic] = useState('')
-  const [lessonsJson, setLessonsJson] = useState(
-    '[{"order":1,"name":"Intro","content":"Welcome lesson"}]',
-  )
-  const [cover, setCover] = useState<File | null>(null)
+  const [lessons, setLessons] = useState<LessonDraft[]>([newLesson(1)])
+  const [coverFiles, setCoverFiles] = useState<File[]>([])
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -46,6 +60,19 @@ export default function EducationPage() {
       toast.error('Title is required')
       return
     }
+    const cleaned = lessons
+      .map((lesson, index) => ({
+        order: index + 1,
+        name: lesson.name.trim() || `Lesson ${index + 1}`,
+        content: lesson.content.trim(),
+      }))
+      .filter((lesson) => lesson.name || lesson.content)
+
+    if (!cleaned.length) {
+      toast.error('Add at least one lesson')
+      return
+    }
+
     setSaving(true)
     try {
       const form = new FormData()
@@ -54,14 +81,15 @@ export default function EducationPage() {
       form.append('topic', topic)
       form.append('isPublished', 'true')
       form.append('isTrending', 'false')
-      form.append('lessons', lessonsJson)
-      if (cover) form.append('cover', cover)
+      form.append('lessons', JSON.stringify(cleaned))
+      if (coverFiles[0]) form.append('cover', coverFiles[0])
       await adminApi.createCourse(form)
       toast.success('Course published')
       setTitle('')
       setDescription('')
       setTopic('')
-      setCover(null)
+      setLessons([newLesson(1)])
+      setCoverFiles([])
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
@@ -82,8 +110,8 @@ export default function EducationPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Education CMS"
-        description="TRD 3.4 — publish courses and review business contributions."
+        title="Education"
+        description="Publish courses and review business contributions."
         actions={<Button onClick={() => void load()}>Refresh</Button>}
       />
 
@@ -104,20 +132,69 @@ export default function EducationPage() {
             onChange={(e) => setDescription(e.target.value)}
           />
         </Field>
-        <Field label="Lessons JSON">
-          <textarea
-            className={textareaClass}
-            value={lessonsJson}
-            onChange={(e) => setLessonsJson(e.target.value)}
-          />
-        </Field>
-        <Field label="Cover image">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setCover(e.target.files?.[0] || null)}
-          />
-        </Field>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">Lessons</h3>
+            <Button
+              variant="secondary"
+              onClick={() => setLessons((prev) => [...prev, newLesson(prev.length + 1)])}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Plus className="h-3.5 w-3.5" />
+                Add lesson
+              </span>
+            </Button>
+          </div>
+          {lessons.map((lesson, index) => (
+            <Card key={lesson.id} className="space-y-3 !p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-[var(--haze-muted)]">Lesson {index + 1}</p>
+                {lessons.length > 1 ? (
+                  <button
+                    type="button"
+                    className="rounded-lg p-1.5 text-red-300 hover:bg-red-500/10"
+                    onClick={() => setLessons((prev) => prev.filter((l) => l.id !== lesson.id))}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+              <Field label="Lesson name">
+                <input
+                  className={inputClass}
+                  value={lesson.name}
+                  onChange={(e) =>
+                    setLessons((prev) =>
+                      prev.map((l) => (l.id === lesson.id ? { ...l, name: e.target.value } : l)),
+                    )
+                  }
+                />
+              </Field>
+              <Field label="Lesson content">
+                <textarea
+                  className={textareaClass}
+                  value={lesson.content}
+                  onChange={(e) =>
+                    setLessons((prev) =>
+                      prev.map((l) =>
+                        l.id === lesson.id ? { ...l, content: e.target.value } : l,
+                      ),
+                    )
+                  }
+                />
+              </Field>
+            </Card>
+          ))}
+        </div>
+
+        <FileUpload
+          label="Cover image"
+          accept="image/*"
+          files={coverFiles}
+          onChange={setCoverFiles}
+        />
+
         <Button disabled={saving} onClick={() => void createCourse()}>
           {saving ? 'Publishing…' : 'Publish course'}
         </Button>
@@ -135,14 +212,18 @@ export default function EducationPage() {
               const id = String(row._id)
               const biz = row.businessUserId as Record<string, unknown> | undefined
               return (
-                <Card key={id} className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <Card
+                  key={id}
+                  className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+                >
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">{String(row.title)}</h3>
                       <Badge tone="warn">{String(row.type)}</Badge>
                     </div>
                     <p className="text-sm text-[var(--haze-muted)]">
-                      {String(biz?.businessName || biz?.email || '')} — {String(row.description || '')}
+                      {String(biz?.businessName || biz?.email || '')} —{' '}
+                      {String(row.description || '')}
                     </p>
                   </div>
                   <div className="flex gap-2">

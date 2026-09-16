@@ -8,6 +8,8 @@ import {
   Button,
   Card,
   Field,
+  FileUpload,
+  MediaPreviewCard,
   PageHeader,
   inputClass,
   textareaClass,
@@ -27,8 +29,8 @@ export default function ProfilePage() {
   const [state, setState] = useState('')
   const [zipCode, setZipCode] = useState('')
   const [apartment, setApartment] = useState('')
-  const [preview, setPreview] = useState<string | null>(null)
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [existingImage, setExistingImage] = useState<string | null>(null)
+  const [imageFiles, setImageFiles] = useState<File[]>([])
   const [email, setEmail] = useState('')
 
   const applyProfile = (profile: Record<string, unknown> | AdminUser) => {
@@ -42,7 +44,7 @@ export default function ProfilePage() {
     setState(String(address.state || ''))
     setZipCode(String(address.zipCode || ''))
     setApartment(String(address.apartmentSuiteFloor || ''))
-    setPreview(typeof profile.userImg === 'string' ? profile.userImg : null)
+    setExistingImage(typeof profile.userImg === 'string' ? profile.userImg : null)
   }
 
   useEffect(() => {
@@ -66,13 +68,6 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const onPickImage = (file: File | null) => {
-    setImageFile(file)
-    if (file) {
-      setPreview(URL.createObjectURL(file))
-    }
-  }
-
   const save = async () => {
     setSaving(true)
     try {
@@ -90,12 +85,12 @@ export default function ProfilePage() {
           apartmentSuiteFloor: apartment.trim(),
         }),
       )
-      if (imageFile) form.append('userImg', imageFile)
+      if (imageFiles[0]) form.append('userImg', imageFiles[0])
 
       const updated = await adminApi.updateProfile(form)
       setUser(updated as AdminUser)
       applyProfile(updated)
-      setImageFile(null)
+      setImageFiles([])
       toast.success('Profile updated')
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -116,26 +111,16 @@ export default function ProfilePage() {
       />
 
       <Card className="space-y-5">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          {preview ? (
-            <img
-              src={preview}
-              alt=""
-              className="h-20 w-20 rounded-full object-cover border border-[var(--haze-border)]"
-            />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--haze-accent)]/15 text-sm text-[var(--haze-muted)]">
-              No photo
-            </div>
-          )}
-          <Field label="Profile image">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => onPickImage(e.target.files?.[0] || null)}
-            />
-          </Field>
-        </div>
+        {existingImage && imageFiles.length === 0 ? (
+          <MediaPreviewCard label="Current profile image" url={existingImage} />
+        ) : null}
+
+        <FileUpload
+          label="Profile image"
+          accept="image/*"
+          files={imageFiles}
+          onChange={setImageFiles}
+        />
 
         <Field label="Email">
           <input className={inputClass} value={email} disabled />

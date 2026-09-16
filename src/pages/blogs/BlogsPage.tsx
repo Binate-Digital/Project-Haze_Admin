@@ -38,7 +38,7 @@ export default function BlogsPage() {
     <div>
       <PageHeader
         title="Blogs moderation"
-        description="TRD 3.4 — approve, feature, and trend business blogs."
+        description="Approve, feature, and mark blogs as trending."
         actions={<Button onClick={() => void load()}>Refresh</Button>}
       />
 
@@ -64,11 +64,13 @@ export default function BlogsPage() {
                     </p>
                   </div>
                   {typeof blog.blogImage === 'string' ? (
-                    <img
-                      src={blog.blogImage}
-                      alt=""
-                      className="h-16 w-24 rounded-lg object-cover border border-[var(--haze-border)]"
-                    />
+                    <a href={blog.blogImage} target="_blank" rel="noreferrer" title="Open image">
+                      <img
+                        src={blog.blogImage}
+                        alt=""
+                        className="h-16 w-24 rounded-lg object-cover border border-[var(--haze-border)] hover:opacity-90"
+                      />
+                    </a>
                   ) : null}
                 </div>
                 <p className="text-sm text-[var(--haze-muted)] line-clamp-3">
