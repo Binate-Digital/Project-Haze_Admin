@@ -10,6 +10,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import BusinessesPage from '@/pages/businesses/BusinessesPage'
 import BusinessDetailPage from '@/pages/businesses/BusinessDetailPage'
 import BlogsPage from '@/pages/blogs/BlogsPage'
+import BlogFormPage from '@/pages/blogs/BlogFormPage'
 import EducationPage from '@/pages/education/EducationPage'
 import CreateCoursePage from '@/pages/education/CreateCoursePage'
 import ContributionsPage from '@/pages/education/ContributionsPage'
@@ -56,6 +57,8 @@ export default function App() {
             <Route path={ROUTES.USERS} element={<UsersPage />} />
             <Route path={ROUTES.USERS_CREATE_SUBADMIN} element={<CreateSubAdminPage />} />
             <Route path={ROUTES.BLOGS} element={<BlogsPage />} />
+            <Route path={ROUTES.BLOGS_CREATE} element={<BlogFormPage />} />
+            <Route path={ROUTES.BLOGS_EDIT} element={<BlogFormPage />} />
             <Route path={ROUTES.EDUCATION} element={<EducationPage />} />
             <Route path={ROUTES.EDUCATION_CREATE} element={<CreateCoursePage />} />
             <Route path={ROUTES.EDUCATION_CONTRIBUTIONS} element={<ContributionsPage />} />

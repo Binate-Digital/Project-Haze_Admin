@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
@@ -10,20 +11,29 @@ import {
   useClientPagination,
   type DataTableColumn,
 } from '@/components/DataTable'
+import { ROUTES } from '@/config'
 
 type Row = Record<string, unknown>
 
+function statusOf(blog: Row) {
+  if (blog.isApproved && blog.isActive) return { label: 'published', tone: 'ok' as const }
+  if (blog.isApproved) return { label: 'approved', tone: 'ok' as const }
+  return { label: 'pending', tone: 'warn' as const }
+}
+
 export default function BlogsPage() {
+  const navigate = useNavigate()
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
+  const [status, setStatus] = useState<'all' | 'pending' | 'approved' | 'active'>('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
   const load = async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getPendingBlogs()
+      const data = await adminApi.getBlogs({ status, limit: 500 })
       setRows(Array.isArray(data) ? data : [])
       setPage(1)
     } catch (error) {
@@ -35,14 +45,14 @@ export default function BlogsPage() {
 
   useEffect(() => {
     void load()
-  }, [])
+  }, [status])
 
   const filtered = useMemo(() => {
     if (!q.trim()) return rows
     const needle = q.trim().toLowerCase()
     return rows.filter((blog) => {
       const author = blog.businessUserId as Record<string, unknown> | undefined
-      return `${blog.title || ''} ${blog.content || ''} ${author?.businessName || ''} ${author?.email || ''}`
+      return `${blog.title || ''} ${blog.content || ''} ${author?.businessName || ''} ${author?.fullName || ''} ${author?.email || ''}`
         .toLowerCase()
         .includes(needle)
     })
@@ -90,7 +100,20 @@ export default function BlogsPage() {
     {
       key: 'status',
       header: 'Status',
-      render: () => <Badge tone="warn">pending</Badge>,
+      render: (blog) => {
+        const s = statusOf(blog)
+        return <Badge tone={s.tone}>{s.label}</Badge>
+      },
+    },
+    {
+      key: 'flags',
+      header: 'Flags',
+      render: (blog) => (
+        <div className="flex flex-wrap gap-1">
+          {blog.isFeatured ? <Badge>featured</Badge> : null}
+          {blog.isTrending ? <Badge>trending</Badge> : null}
+        </div>
+      ),
     },
     {
       key: 'preview',
@@ -104,10 +127,16 @@ export default function BlogsPage() {
       header: 'Actions',
       render: (blog) => {
         const id = String(blog._id)
+        const pending = !blog.isApproved
         return (
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => void act(() => adminApi.approveBlog(id), 'Blog approved')}>
-              Approve
+            {pending ? (
+              <Button onClick={() => void act(() => adminApi.approveBlog(id), 'Blog approved')}>
+                Approve
+              </Button>
+            ) : null}
+            <Button variant="secondary" onClick={() => navigate(`/blogs/${id}/edit`)}>
+              Edit
             </Button>
             <Button
               variant="secondary"
@@ -131,11 +160,29 @@ export default function BlogsPage() {
             >
               Trending
             </Button>
+            {blog.isApproved ? (
+              <Button
+                variant="secondary"
+                onClick={() => void act(() => adminApi.rejectBlog(id), 'Blog unpublished')}
+              >
+                Unpublish
+              </Button>
+            ) : (
+              <Button
+                variant="danger"
+                onClick={() => void act(() => adminApi.rejectBlog(id), 'Blog rejected')}
+              >
+                Reject
+              </Button>
+            )}
             <Button
               variant="danger"
-              onClick={() => void act(() => adminApi.rejectBlog(id), 'Blog rejected')}
+              onClick={() => {
+                if (!window.confirm('Delete this blog?')) return
+                void act(() => adminApi.deleteBlog(id), 'Blog deleted')
+              }}
             >
-              Reject
+              Delete
             </Button>
           </div>
         )
@@ -146,16 +193,33 @@ export default function BlogsPage() {
   return (
     <div>
       <PageHeader
-        title="Blogs moderation"
-        description="Pending blogs awaiting review."
+        title="Blogs"
+        description="All blogs — approve pending ones, or create / edit / delete content."
         actions={
-          <Button variant="ghost" onClick={() => void load()}>
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => void load()}>
+              Refresh
+            </Button>
+            <Link to={ROUTES.BLOGS_CREATE}>
+              <Button>Create blog</Button>
+            </Link>
+          </div>
         }
       />
 
       <FilterBar>
+        <FilterField label="Status" className="min-w-[140px]">
+          <select
+            className={inputClass}
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+          >
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="active">Published</option>
+          </select>
+        </FilterField>
         <FilterField label="Search" className="min-w-[220px] flex-[2]">
           <input
             className={inputClass}
@@ -182,7 +246,7 @@ export default function BlogsPage() {
           setPage(1)
         }}
         rowKey={(row) => String(row._id)}
-        emptyMessage="No pending blogs."
+        emptyMessage="No blogs found."
       />
     </div>
   )

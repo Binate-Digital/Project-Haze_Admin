@@ -39,6 +39,28 @@ export const adminApi = {
     const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/blogs/pending')
     return unwrap(data)
   },
+  getBlogs: async (params?: { status?: string; q?: string; limit?: number }) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/blogs', {
+      params,
+    })
+    return unwrap(data)
+  },
+  createBlog: async (form: FormData) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>('/admin/blogs', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return unwrap(data, data.message)
+  },
+  updateBlog: async (blogId: string, form: FormData) => {
+    const { data } = await api.patch<ApiEnvelope<unknown>>(`/admin/blogs/${blogId}`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return unwrap(data, data.message)
+  },
+  deleteBlog: async (blogId: string) => {
+    const { data } = await api.delete<ApiEnvelope<unknown>>(`/admin/blogs/${blogId}`)
+    return unwrap(data, data.message)
+  },
   approveBlog: async (blogId: string) => {
     const { data } = await api.post<ApiEnvelope<unknown>>(`/admin/approve-blog/${blogId}`)
     return unwrap(data, data.message)

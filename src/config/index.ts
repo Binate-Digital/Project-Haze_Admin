@@ -11,6 +11,8 @@ export const ROUTES = {
   BUSINESSES: '/businesses',
   BUSINESS_DETAIL: '/businesses/:businessId',
   BLOGS: '/blogs',
+  BLOGS_CREATE: '/blogs/create',
+  BLOGS_EDIT: '/blogs/:blogId/edit',
   EDUCATION: '/education',
   EDUCATION_CREATE: '/education/create',
   EDUCATION_CONTRIBUTIONS: '/education/contributions',
