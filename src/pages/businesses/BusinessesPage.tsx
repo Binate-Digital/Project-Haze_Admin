@@ -1,11 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Badge, Button, Card, EmptyState, PageHeader } from '@/components/ui'
+import { Badge, Button, PageHeader, inputClass } from '@/components/ui'
+import {
+  DataTable,
+  FilterBar,
+  FilterField,
+  useClientPagination,
+  type DataTableColumn,
+} from '@/components/DataTable'
 
-function businessUserIdOf(row: Record<string, unknown>) {
+type Row = Record<string, unknown>
+
+function businessUserIdOf(row: Row) {
   const user = row.businessUserId as { _id?: string } | string | undefined
   if (typeof user === 'string') return user
   if (user?._id) return user._id
@@ -13,14 +22,19 @@ function businessUserIdOf(row: Record<string, unknown>) {
 }
 
 export default function BusinessesPage() {
-  const [rows, setRows] = useState<Record<string, unknown>[]>([])
+  const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState('')
+  const [city, setCity] = useState('all')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = async () => {
     setLoading(true)
     try {
       const data = await adminApi.getPendingBusinesses()
       setRows(Array.isArray(data) ? data : [])
+      setPage(1)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
@@ -31,6 +45,28 @@ export default function BusinessesPage() {
   useEffect(() => {
     void load()
   }, [])
+
+  const cities = useMemo(() => {
+    const set = new Set<string>()
+    rows.forEach((row) => {
+      const c = (row.address as { city?: string } | undefined)?.city
+      if (c) set.add(c)
+    })
+    return [...set]
+  }, [rows])
+
+  const filtered = useMemo(() => {
+    return rows.filter((row) => {
+      const address = row.address as { city?: string } | undefined
+      if (city !== 'all' && address?.city !== city) return false
+      if (!q.trim()) return true
+      const biz = row.businessUserId as Record<string, unknown> | undefined
+      const hay = `${row.storeName || ''} ${biz?.businessName || ''} ${biz?.email || ''} ${address?.city || ''}`.toLowerCase()
+      return hay.includes(q.trim().toLowerCase())
+    })
+  }, [rows, q, city])
+
+  const { pageRows, total, safePage } = useClientPagination(filtered, page, pageSize)
 
   const approve = async (businessUserId: string) => {
     try {
@@ -54,62 +90,118 @@ export default function BusinessesPage() {
     }
   }
 
+  const columns: DataTableColumn<Row>[] = [
+    {
+      key: 'store',
+      header: 'Store',
+      render: (row) => {
+        const biz = row.businessUserId as Record<string, unknown> | undefined
+        return (
+          <div>
+            <p className="font-medium">{String(row.storeName || 'Untitled store')}</p>
+            <p className="text-xs text-[var(--haze-muted)]">
+              {String(biz?.businessName || biz?.email || '—')}
+            </p>
+          </div>
+        )
+      },
+    },
+    {
+      key: 'city',
+      header: 'City',
+      render: (row) =>
+        String((row.address as { city?: string } | undefined)?.city || '—'),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: () => <Badge tone="warn">pending</Badge>,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (row) => {
+        const storeId = String(row._id || '')
+        const businessUserId = businessUserIdOf(row)
+        return (
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/businesses/${storeId}`}>
+              <Button variant="ghost">Details</Button>
+            </Link>
+            <Button disabled={!businessUserId} onClick={() => void approve(businessUserId)}>
+              Approve
+            </Button>
+            <Button
+              variant="danger"
+              disabled={!businessUserId}
+              onClick={() => void reject(businessUserId)}
+            >
+              Reject
+            </Button>
+          </div>
+        )
+      },
+    },
+  ]
+
   return (
     <div>
       <PageHeader
         title="Business verification"
-        description="Review pending store registrations and documents."
-        actions={<Button onClick={() => void load()}>Refresh</Button>}
+        description="Pending store registrations."
+        actions={
+          <Button variant="ghost" onClick={() => void load()}>
+            Refresh
+          </Button>
+        }
       />
 
-      {loading ? (
-        <p className="text-sm text-[var(--haze-muted)]">Loading…</p>
-      ) : rows.length === 0 ? (
-        <EmptyState message="No pending businesses." />
-      ) : (
-        <div className="space-y-3">
-          {rows.map((row) => {
-            const bizUser = row.businessUserId as Record<string, unknown> | undefined
-            const storeId = String(row._id || '')
-            const businessUserId = businessUserIdOf(row)
-            return (
-              <Card
-                key={storeId}
-                className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">{String(row.storeName || 'Untitled store')}</h3>
-                    <Badge tone="warn">pending</Badge>
-                  </div>
-                  <p className="text-sm text-[var(--haze-muted)]">
-                    {String(bizUser?.businessName || bizUser?.email || '—')} ·{' '}
-                    {String((row.address as { city?: string } | undefined)?.city || 'No city')}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Link to={`/businesses/${storeId}`}>
-                    <Button variant="ghost">Details</Button>
-                  </Link>
-                  <Button
-                    disabled={!businessUserId}
-                    onClick={() => void approve(businessUserId)}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    variant="danger"
-                    disabled={!businessUserId}
-                    onClick={() => void reject(businessUserId)}
-                  >
-                    Reject
-                  </Button>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      <FilterBar>
+        <FilterField label="City">
+          <select
+            className={inputClass}
+            value={city}
+            onChange={(e) => {
+              setCity(e.target.value)
+              setPage(1)
+            }}
+          >
+            <option value="all">All</option>
+            {cities.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField label="Search" className="min-w-[220px] flex-[2]">
+          <input
+            className={inputClass}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value)
+              setPage(1)
+            }}
+            placeholder="store, business, email"
+          />
+        </FilterField>
+      </FilterBar>
+
+      <DataTable
+        columns={columns}
+        rows={pageRows}
+        loading={loading}
+        page={safePage}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          setPage(1)
+        }}
+        rowKey={(row) => String(row._id)}
+        emptyMessage="No pending businesses."
+      />
     </div>
   )
 }

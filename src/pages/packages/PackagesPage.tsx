@@ -1,40 +1,37 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
+import { Badge, Button, PageHeader, inputClass } from '@/components/ui'
 import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  PageHeader,
-  inputClass,
-  textareaClass,
-} from '@/components/ui'
+  DataTable,
+  FilterBar,
+  FilterField,
+  useClientPagination,
+  type DataTableColumn,
+} from '@/components/DataTable'
+import { ROUTES } from '@/config'
 
-const emptyForm = {
-  packageName: '',
-  description: '',
-  price: '',
-  durationInDays: '30',
-  features: '',
-  packageType: 'store' as 'store' | 'ads',
-  isActive: true,
-}
+type Row = Record<string, unknown>
 
 export default function PackagesPage() {
-  const [rows, setRows] = useState<Record<string, unknown>[]>([])
+  const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState(emptyForm)
-  const [saving, setSaving] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [packageType, setPackageType] = useState('all')
+  const [active, setActive] = useState('all')
+  const [q, setQ] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getPackages()
+      const data = await adminApi.getPackages(
+        packageType === 'all' ? undefined : packageType,
+      )
       setRows(Array.isArray(data) ? data : [])
+      setPage(1)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
@@ -44,57 +41,20 @@ export default function PackagesPage() {
 
   useEffect(() => {
     void load()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packageType])
 
-  const parseFeatures = (raw: string) =>
-    raw
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean)
+  const filtered = useMemo(() => {
+    return rows.filter((row) => {
+      if (active === 'yes' && row.isActive === false) return false
+      if (active === 'no' && row.isActive !== false) return false
+      if (!q.trim()) return true
+      const hay = `${row.packageName || ''} ${row.description || ''}`.toLowerCase()
+      return hay.includes(q.trim().toLowerCase())
+    })
+  }, [rows, active, q])
 
-  const save = async () => {
-    if (!form.packageName.trim()) {
-      toast.error('Package name is required')
-      return
-    }
-    const features = parseFeatures(form.features)
-    if (!features.length) {
-      toast.error('Add at least one feature (one per line)')
-      return
-    }
-    setSaving(true)
-    try {
-      if (editingId) {
-        await adminApi.updatePackage(editingId, {
-          packageName: form.packageName.trim(),
-          description: form.description.trim(),
-          price: Number(form.price) || 0,
-          durationInDays: Number(form.durationInDays) || 30,
-          features,
-          isActive: form.isActive,
-          packageType: form.packageType,
-        })
-        toast.success('Package updated')
-      } else {
-        await adminApi.createPackage({
-          packageName: form.packageName.trim(),
-          description: form.description.trim(),
-          price: Number(form.price) || 0,
-          durationInDays: Number(form.durationInDays) || 30,
-          features,
-          packageType: form.packageType,
-        })
-        toast.success('Package created')
-      }
-      setForm(emptyForm)
-      setEditingId(null)
-      await load()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    } finally {
-      setSaving(false)
-    }
-  }
+  const { pageRows, total, safePage } = useClientPagination(filtered, page, pageSize)
 
   const remove = async (packageId: string) => {
     if (!window.confirm('Delete this package?')) return
@@ -107,145 +67,130 @@ export default function PackagesPage() {
     }
   }
 
-  const startEdit = (row: Record<string, unknown>) => {
-    setEditingId(String(row._id))
-    const features = Array.isArray(row.features) ? row.features.map(String) : []
-    setForm({
-      packageName: String(row.packageName || row.name || ''),
-      description: String(row.description || ''),
-      price: String(row.price ?? ''),
-      durationInDays: String(row.durationInDays ?? 30),
-      features: features.join('\n'),
-      packageType: row.packageType === 'ads' ? 'ads' : 'store',
-      isActive: Boolean(row.isActive !== false),
-    })
-  }
+  const columns: DataTableColumn<Row>[] = [
+    {
+      key: 'name',
+      header: 'Package',
+      render: (row) => (
+        <div>
+          <p className="font-medium">{String(row.packageName || row.name)}</p>
+          <p className="line-clamp-1 text-xs text-[var(--haze-muted)]">
+            {String(row.description || '')}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      render: (row) => <Badge>{String(row.packageType || 'store')}</Badge>,
+    },
+    {
+      key: 'price',
+      header: 'Price',
+      render: (row) => String(row.price ?? 0),
+    },
+    {
+      key: 'duration',
+      header: 'Duration',
+      render: (row) => `${String(row.durationInDays || 30)} days`,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row) =>
+        row.isActive !== false ? (
+          <Badge tone="ok">active</Badge>
+        ) : (
+          <Badge tone="neutral">inactive</Badge>
+        ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (row) => (
+        <div className="flex gap-2">
+          <Link to={`/packages/${String(row._id)}/edit`}>
+            <Button variant="secondary">Edit</Button>
+          </Link>
+          <Button variant="danger" onClick={() => void remove(String(row._id))}>
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <div className="space-y-8">
+    <div>
       <PageHeader
-        title="Subscription packages"
-        description="Manage store and ads subscription plans."
-        actions={<Button onClick={() => void load()}>Refresh</Button>}
+        title="Packages"
+        description="Store and ads subscription plans."
+        actions={
+          <>
+            <Button variant="ghost" onClick={() => void load()}>
+              Refresh
+            </Button>
+            <Link to={ROUTES.PACKAGES_CREATE}>
+              <Button>Create package</Button>
+            </Link>
+          </>
+        }
       />
 
-      <Card className="space-y-4">
-        <h2 className="text-lg font-medium">{editingId ? 'Edit package' : 'Create package'}</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Package name">
-            <input
-              className={inputClass}
-              value={form.packageName}
-              onChange={(e) => setForm((f) => ({ ...f, packageName: e.target.value }))}
-            />
-          </Field>
-          <Field label="Type">
-            <select
-              className={inputClass}
-              value={form.packageType}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, packageType: e.target.value as 'store' | 'ads' }))
-              }
-            >
-              <option value="store">store</option>
-              <option value="ads">ads</option>
-            </select>
-          </Field>
-          <Field label="Price">
-            <input
-              className={inputClass}
-              type="number"
-              value={form.price}
-              onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-            />
-          </Field>
-          <Field label="Duration (days)">
-            <input
-              className={inputClass}
-              type="number"
-              value={form.durationInDays}
-              onChange={(e) => setForm((f) => ({ ...f, durationInDays: e.target.value }))}
-            />
-          </Field>
-        </div>
-        <Field label="Description">
+      <FilterBar>
+        <FilterField label="Type">
+          <select
+            className={inputClass}
+            value={packageType}
+            onChange={(e) => setPackageType(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="store">Store</option>
+            <option value="ads">Ads</option>
+          </select>
+        </FilterField>
+        <FilterField label="Status">
+          <select
+            className={inputClass}
+            value={active}
+            onChange={(e) => {
+              setActive(e.target.value)
+              setPage(1)
+            }}
+          >
+            <option value="all">All</option>
+            <option value="yes">Active</option>
+            <option value="no">Inactive</option>
+          </select>
+        </FilterField>
+        <FilterField label="Search" className="min-w-[220px] flex-[2]">
           <input
             className={inputClass}
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value)
+              setPage(1)
+            }}
+            placeholder="name or description"
           />
-        </Field>
-        <Field label="Features (one per line)">
-          <textarea
-            className={textareaClass}
-            value={form.features}
-            onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))}
-          />
-        </Field>
-        {editingId ? (
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-            />
-            Active
-          </label>
-        ) : null}
-        <div className="flex gap-2">
-          <Button disabled={saving} onClick={() => void save()}>
-            {saving ? 'Saving…' : editingId ? 'Update' : 'Create'}
-          </Button>
-          {editingId ? (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setEditingId(null)
-                setForm(emptyForm)
-              }}
-            >
-              Cancel
-            </Button>
-          ) : null}
-        </div>
-      </Card>
+        </FilterField>
+      </FilterBar>
 
-      {loading ? (
-        <p className="text-sm text-[var(--haze-muted)]">Loading…</p>
-      ) : rows.length === 0 ? (
-        <EmptyState message="No packages yet." />
-      ) : (
-        <div className="space-y-3">
-          {rows.map((row) => (
-            <Card
-              key={String(row._id)}
-              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium">{String(row.packageName || row.name)}</h3>
-                  <Badge tone={row.isActive !== false ? 'ok' : 'neutral'}>
-                    {row.isActive !== false ? 'active' : 'inactive'}
-                  </Badge>
-                  <Badge>{String(row.packageType || 'store')}</Badge>
-                </div>
-                <p className="text-sm text-[var(--haze-muted)]">
-                  {String(row.price)} · {String(row.durationInDays || 30)} days
-                </p>
-                <p className="text-sm text-[var(--haze-muted)]">{String(row.description || '')}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={() => startEdit(row)}>
-                  Edit
-                </Button>
-                <Button variant="danger" onClick={() => void remove(String(row._id))}>
-                  Delete
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        rows={pageRows}
+        loading={loading}
+        page={safePage}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          setPage(1)
+        }}
+        rowKey={(row) => String(row._id)}
+      />
     </div>
   )
 }

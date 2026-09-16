@@ -1,54 +1,34 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Plus, Trash2 } from 'lucide-react'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
+import { Badge, Button, PageHeader, inputClass } from '@/components/ui'
 import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  FileUpload,
-  PageHeader,
-  inputClass,
-  textareaClass,
-} from '@/components/ui'
+  DataTable,
+  FilterBar,
+  FilterField,
+  useClientPagination,
+  type DataTableColumn,
+} from '@/components/DataTable'
+import { ROUTES } from '@/config'
 
-type LessonDraft = {
-  id: string
-  name: string
-  content: string
-}
-
-function newLesson(order = 1): LessonDraft {
-  return {
-    id: `${Date.now()}-${order}`,
-    name: order === 1 ? 'Intro' : `Lesson ${order}`,
-    content: '',
-  }
-}
+type Row = Record<string, unknown>
 
 export default function EducationPage() {
-  const [rows, setRows] = useState<Record<string, unknown>[]>([])
-  const [courses, setCourses] = useState<Record<string, unknown>[]>([])
+  const [courses, setCourses] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [topic, setTopic] = useState('')
-  const [lessons, setLessons] = useState<LessonDraft[]>([newLesson(1)])
-  const [coverFiles, setCoverFiles] = useState<File[]>([])
-  const [saving, setSaving] = useState(false)
+  const [published, setPublished] = useState('all')
+  const [q, setQ] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = async () => {
     setLoading(true)
     try {
-      const [contrib, courseList] = await Promise.all([
-        adminApi.getPendingContributions(),
-        adminApi.listCourses(),
-      ])
-      setRows(Array.isArray(contrib) ? contrib : [])
-      setCourses(Array.isArray(courseList) ? courseList : [])
+      const data = await adminApi.listCourses()
+      setCourses(Array.isArray(data) ? data : [])
+      setPage(1)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
@@ -60,50 +40,19 @@ export default function EducationPage() {
     void load()
   }, [])
 
-  const createCourse = async () => {
-    if (!title.trim()) {
-      toast.error('Title is required')
-      return
-    }
-    const cleaned = lessons
-      .map((lesson, index) => ({
-        order: index + 1,
-        name: lesson.name.trim() || `Lesson ${index + 1}`,
-        content: lesson.content.trim(),
-      }))
-      .filter((lesson) => lesson.name || lesson.content)
+  const filtered = useMemo(() => {
+    return courses.filter((course) => {
+      if (published === 'yes' && !course.isPublished) return false
+      if (published === 'no' && course.isPublished) return false
+      if (!q.trim()) return true
+      const hay = `${course.title || ''} ${course.topic || ''} ${course.category || ''}`.toLowerCase()
+      return hay.includes(q.trim().toLowerCase())
+    })
+  }, [courses, published, q])
 
-    if (!cleaned.length) {
-      toast.error('Add at least one lesson')
-      return
-    }
+  const { pageRows, total, safePage } = useClientPagination(filtered, page, pageSize)
 
-    setSaving(true)
-    try {
-      const form = new FormData()
-      form.append('title', title.trim())
-      form.append('description', description)
-      form.append('topic', topic)
-      form.append('isPublished', 'true')
-      form.append('isTrending', 'false')
-      form.append('lessons', JSON.stringify(cleaned))
-      if (coverFiles[0]) form.append('cover', coverFiles[0])
-      await adminApi.createCourse(form)
-      toast.success('Course published')
-      setTitle('')
-      setDescription('')
-      setTopic('')
-      setLessons([newLesson(1)])
-      setCoverFiles([])
-      await load()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const togglePublish = async (course: Record<string, unknown>) => {
+  const togglePublish = async (course: Row) => {
     try {
       const form = new FormData()
       form.append('isPublished', String(!(course.isPublished === true)))
@@ -126,187 +75,113 @@ export default function EducationPage() {
     }
   }
 
-  const review = async (id: string, action: 'approve' | 'reject') => {
-    try {
-      await adminApi.reviewContribution(id, action)
-      toast.success(`Contribution ${action}d`)
-      await load()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
-  }
+  const columns: DataTableColumn<Row>[] = [
+    {
+      key: 'title',
+      header: 'Course',
+      render: (row) => (
+        <div>
+          <p className="font-medium">{String(row.title)}</p>
+          <p className="text-xs text-[var(--haze-muted)]">
+            {String(row.topic || row.category || 'No topic')}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'lessons',
+      header: 'Lessons',
+      render: (row) => String(row.totalLessons || 0),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row) =>
+        row.isPublished ? <Badge tone="ok">published</Badge> : <Badge tone="warn">draft</Badge>,
+    },
+    {
+      key: 'flags',
+      header: 'Flags',
+      render: (row) => (row.isTrending ? <Badge>trending</Badge> : <span className="text-[var(--haze-muted)]">—</span>),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (row) => (
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => void togglePublish(row)}>
+            {row.isPublished ? 'Unpublish' : 'Publish'}
+          </Button>
+          <Button variant="danger" onClick={() => void removeCourse(String(row._id))}>
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <div className="space-y-8">
+    <div>
       <PageHeader
-        title="Education"
-        description="Publish courses and review business contributions."
-        actions={<Button onClick={() => void load()}>Refresh</Button>}
+        title="Education courses"
+        description="Manage published courses."
+        actions={
+          <>
+            <Link to={ROUTES.EDUCATION_CONTRIBUTIONS}>
+              <Button variant="ghost">Contributions</Button>
+            </Link>
+            <Button variant="ghost" onClick={() => void load()}>
+              Refresh
+            </Button>
+            <Link to={ROUTES.EDUCATION_CREATE}>
+              <Button>Create course</Button>
+            </Link>
+          </>
+        }
       />
 
-      <Card className="space-y-4">
-        <h2 className="text-lg font-medium">Create course</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Title">
-            <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
-          </Field>
-          <Field label="Topic">
-            <input className={inputClass} value={topic} onChange={(e) => setTopic(e.target.value)} />
-          </Field>
-        </div>
-        <Field label="Description">
-          <textarea
-            className={textareaClass}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+      <FilterBar>
+        <FilterField label="Published">
+          <select
+            className={inputClass}
+            value={published}
+            onChange={(e) => {
+              setPublished(e.target.value)
+              setPage(1)
+            }}
+          >
+            <option value="all">All</option>
+            <option value="yes">Published</option>
+            <option value="no">Draft</option>
+          </select>
+        </FilterField>
+        <FilterField label="Search" className="min-w-[220px] flex-[2]">
+          <input
+            className={inputClass}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value)
+              setPage(1)
+            }}
+            placeholder="title or topic"
           />
-        </Field>
+        </FilterField>
+      </FilterBar>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Lessons</h3>
-            <Button
-              variant="secondary"
-              onClick={() => setLessons((prev) => [...prev, newLesson(prev.length + 1)])}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <Plus className="h-3.5 w-3.5" />
-                Add lesson
-              </span>
-            </Button>
-          </div>
-          {lessons.map((lesson, index) => (
-            <Card key={lesson.id} className="space-y-3 !p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-[var(--haze-muted)]">Lesson {index + 1}</p>
-                {lessons.length > 1 ? (
-                  <button
-                    type="button"
-                    className="rounded-lg p-1.5 text-red-300 hover:bg-red-500/10"
-                    onClick={() => setLessons((prev) => prev.filter((l) => l.id !== lesson.id))}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
-              <Field label="Lesson name">
-                <input
-                  className={inputClass}
-                  value={lesson.name}
-                  onChange={(e) =>
-                    setLessons((prev) =>
-                      prev.map((l) => (l.id === lesson.id ? { ...l, name: e.target.value } : l)),
-                    )
-                  }
-                />
-              </Field>
-              <Field label="Lesson content">
-                <textarea
-                  className={textareaClass}
-                  value={lesson.content}
-                  onChange={(e) =>
-                    setLessons((prev) =>
-                      prev.map((l) =>
-                        l.id === lesson.id ? { ...l, content: e.target.value } : l,
-                      ),
-                    )
-                  }
-                />
-              </Field>
-            </Card>
-          ))}
-        </div>
-
-        <FileUpload
-          label="Cover image"
-          accept="image/*"
-          files={coverFiles}
-          onChange={setCoverFiles}
-        />
-
-        <Button disabled={saving} onClick={() => void createCourse()}>
-          {saving ? 'Publishing…' : 'Publish course'}
-        </Button>
-      </Card>
-
-      <div>
-        <h2 className="mb-3 text-lg font-medium">All courses</h2>
-        {loading ? (
-          <p className="text-sm text-[var(--haze-muted)]">Loading…</p>
-        ) : courses.length === 0 ? (
-          <EmptyState message="No courses yet." />
-        ) : (
-          <div className="mb-8 space-y-3">
-            {courses.map((course) => (
-              <Card
-                key={String(course._id)}
-                className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-medium">{String(course.title)}</h3>
-                    <Badge tone={course.isPublished ? 'ok' : 'warn'}>
-                      {course.isPublished ? 'published' : 'draft'}
-                    </Badge>
-                    {course.isTrending ? <Badge>trending</Badge> : null}
-                  </div>
-                  <p className="text-sm text-[var(--haze-muted)]">
-                    {String(course.topic || course.category || 'No topic')} ·{' '}
-                    {String(course.totalLessons || 0)} lessons
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="secondary" onClick={() => void togglePublish(course)}>
-                    {course.isPublished ? 'Unpublish' : 'Publish'}
-                  </Button>
-                  <Button variant="danger" onClick={() => void removeCourse(String(course._id))}>
-                    Delete
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div>
-        <h2 className="mb-3 text-lg font-medium">Pending contributions</h2>
-        {loading ? (
-          <p className="text-sm text-[var(--haze-muted)]">Loading…</p>
-        ) : rows.length === 0 ? (
-          <EmptyState message="No pending contributions." />
-        ) : (
-          <div className="space-y-3">
-            {rows.map((row) => {
-              const id = String(row._id)
-              const biz = row.businessUserId as Record<string, unknown> | undefined
-              return (
-                <Card
-                  key={id}
-                  className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{String(row.title)}</h3>
-                      <Badge tone="warn">{String(row.type)}</Badge>
-                    </div>
-                    <p className="text-sm text-[var(--haze-muted)]">
-                      {String(biz?.businessName || biz?.email || '')} —{' '}
-                      {String(row.description || '')}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => void review(id, 'approve')}>Approve</Button>
-                    <Button variant="danger" onClick={() => void review(id, 'reject')}>
-                      Reject
-                    </Button>
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={pageRows}
+        loading={loading}
+        page={safePage}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          setPage(1)
+        }}
+        rowKey={(row) => String(row._id)}
+      />
     </div>
   )
 }

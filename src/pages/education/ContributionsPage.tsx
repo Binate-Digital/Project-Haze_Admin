@@ -15,18 +15,18 @@ import { ROUTES } from '@/config'
 
 type Row = Record<string, unknown>
 
-export default function LegalPage() {
+export default function ContributionsPage() {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
-  const [type, setType] = useState('all')
   const [q, setQ] = useState('')
+  const [type, setType] = useState('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
   const load = async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getLegalContent(type === 'all' ? undefined : type)
+      const data = await adminApi.getPendingContributions()
       setRows(Array.isArray(data) ? data : [])
       setPage(1)
     } catch (error) {
@@ -38,24 +38,24 @@ export default function LegalPage() {
 
   useEffect(() => {
     void load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type])
+  }, [])
 
   const filtered = useMemo(() => {
-    if (!q.trim()) return rows
-    const needle = q.trim().toLowerCase()
-    return rows.filter((row) =>
-      `${row.title || ''} ${row.content || ''}`.toLowerCase().includes(needle),
-    )
-  }, [rows, q])
+    return rows.filter((row) => {
+      if (type !== 'all' && String(row.type) !== type) return false
+      if (!q.trim()) return true
+      const biz = row.businessUserId as Record<string, unknown> | undefined
+      const hay = `${row.title || ''} ${row.description || ''} ${biz?.businessName || ''} ${biz?.email || ''}`.toLowerCase()
+      return hay.includes(q.trim().toLowerCase())
+    })
+  }, [rows, q, type])
 
   const { pageRows, total, safePage } = useClientPagination(filtered, page, pageSize)
 
-  const remove = async (id: string) => {
-    if (!window.confirm('Delete this legal document?')) return
+  const review = async (id: string, action: 'approve' | 'reject') => {
     try {
-      await adminApi.deleteLegalContent(id)
-      toast.success('Deleted')
+      await adminApi.reviewContribution(id, action)
+      toast.success(`Contribution ${action}d`)
       await load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -65,19 +65,31 @@ export default function LegalPage() {
   const columns: DataTableColumn<Row>[] = [
     {
       key: 'title',
-      header: 'Title',
-      render: (row) => <p className="font-medium">{String(row.title)}</p>,
+      header: 'Contribution',
+      render: (row) => {
+        const biz = row.businessUserId as Record<string, unknown> | undefined
+        return (
+          <div>
+            <p className="font-medium">{String(row.title)}</p>
+            <p className="text-xs text-[var(--haze-muted)]">
+              {String(biz?.businessName || biz?.email || '')}
+            </p>
+          </div>
+        )
+      },
     },
     {
       key: 'type',
       header: 'Type',
-      render: (row) => <Badge>{String(row.type)}</Badge>,
+      render: (row) => <Badge tone="warn">{String(row.type)}</Badge>,
     },
     {
-      key: 'preview',
-      header: 'Preview',
+      key: 'description',
+      header: 'Description',
       render: (row) => (
-        <p className="max-w-md line-clamp-2 text-[var(--haze-muted)]">{String(row.content || '')}</p>
+        <p className="max-w-sm line-clamp-2 text-[var(--haze-muted)]">
+          {String(row.description || '')}
+        </p>
       ),
     },
     {
@@ -85,11 +97,9 @@ export default function LegalPage() {
       header: 'Actions',
       render: (row) => (
         <div className="flex gap-2">
-          <Link to={`/legal/${String(row._id)}/edit`}>
-            <Button variant="secondary">Edit</Button>
-          </Link>
-          <Button variant="danger" onClick={() => void remove(String(row._id))}>
-            Delete
+          <Button onClick={() => void review(String(row._id), 'approve')}>Approve</Button>
+          <Button variant="danger" onClick={() => void review(String(row._id), 'reject')}>
+            Reject
           </Button>
         </div>
       ),
@@ -99,26 +109,36 @@ export default function LegalPage() {
   return (
     <div>
       <PageHeader
-        title="Legal content"
-        description="Terms and privacy documents."
+        title="Education contributions"
+        description="Review pending business submissions."
         actions={
           <>
+            <Link to={ROUTES.EDUCATION}>
+              <Button variant="ghost">Courses</Button>
+            </Link>
             <Button variant="ghost" onClick={() => void load()}>
               Refresh
             </Button>
-            <Link to={ROUTES.LEGAL_CREATE}>
-              <Button>Create document</Button>
-            </Link>
           </>
         }
       />
 
       <FilterBar>
         <FilterField label="Type">
-          <select className={inputClass} value={type} onChange={(e) => setType(e.target.value)}>
+          <select
+            className={inputClass}
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value)
+              setPage(1)
+            }}
+          >
             <option value="all">All</option>
-            <option value="terms_conditions">terms_conditions</option>
-            <option value="privacy_policy">privacy_policy</option>
+            {[...new Set(rows.map((r) => String(r.type || '')).filter(Boolean))].map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </FilterField>
         <FilterField label="Search" className="min-w-[220px] flex-[2]">
@@ -129,7 +149,7 @@ export default function LegalPage() {
               setQ(e.target.value)
               setPage(1)
             }}
-            placeholder="title or content"
+            placeholder="title, business, description"
           />
         </FilterField>
       </FilterBar>
@@ -147,6 +167,7 @@ export default function LegalPage() {
           setPage(1)
         }}
         rowKey={(row) => String(row._id)}
+        emptyMessage="No pending contributions."
       />
     </div>
   )

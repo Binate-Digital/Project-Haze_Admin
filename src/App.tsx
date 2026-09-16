@@ -11,10 +11,15 @@ import BusinessesPage from '@/pages/businesses/BusinessesPage'
 import BusinessDetailPage from '@/pages/businesses/BusinessDetailPage'
 import BlogsPage from '@/pages/blogs/BlogsPage'
 import EducationPage from '@/pages/education/EducationPage'
+import CreateCoursePage from '@/pages/education/CreateCoursePage'
+import ContributionsPage from '@/pages/education/ContributionsPage'
 import AdsPage from '@/pages/ads/AdsPage'
 import PackagesPage from '@/pages/packages/PackagesPage'
+import PackageFormPage from '@/pages/packages/PackageFormPage'
 import LegalPage from '@/pages/legal/LegalPage'
+import LegalFormPage from '@/pages/legal/LegalFormPage'
 import UsersPage from '@/pages/users/UsersPage'
+import CreateSubAdminPage from '@/pages/users/CreateSubAdminPage'
 import NotificationsPage from '@/pages/notifications/NotificationsPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
 import OrdersPage from '@/pages/orders/OrdersPage'
@@ -49,14 +54,21 @@ export default function App() {
             <Route path={ROUTES.BUSINESSES} element={<BusinessesPage />} />
             <Route path={ROUTES.BUSINESS_DETAIL} element={<BusinessDetailPage />} />
             <Route path={ROUTES.USERS} element={<UsersPage />} />
+            <Route path={ROUTES.USERS_CREATE_SUBADMIN} element={<CreateSubAdminPage />} />
             <Route path={ROUTES.BLOGS} element={<BlogsPage />} />
             <Route path={ROUTES.EDUCATION} element={<EducationPage />} />
+            <Route path={ROUTES.EDUCATION_CREATE} element={<CreateCoursePage />} />
+            <Route path={ROUTES.EDUCATION_CONTRIBUTIONS} element={<ContributionsPage />} />
             <Route path={ROUTES.ADS} element={<AdsPage />} />
             <Route path={ROUTES.ORDERS} element={<OrdersPage />} />
             <Route path={ROUTES.PACKAGES} element={<PackagesPage />} />
+            <Route path={ROUTES.PACKAGES_CREATE} element={<PackageFormPage />} />
+            <Route path={ROUTES.PACKAGES_EDIT} element={<PackageFormPage />} />
             <Route path={ROUTES.NOTIFICATIONS} element={<NotificationsPage />} />
             <Route path={ROUTES.REPORTS} element={<ReportsPage />} />
             <Route path={ROUTES.LEGAL} element={<LegalPage />} />
+            <Route path={ROUTES.LEGAL_CREATE} element={<LegalFormPage />} />
+            <Route path={ROUTES.LEGAL_EDIT} element={<LegalFormPage />} />
             <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
             <Route path={ROUTES.UPDATE_PASSWORD} element={<UpdatePasswordPage />} />
           </Route>

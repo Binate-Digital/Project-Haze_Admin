@@ -187,7 +187,7 @@ export const adminApi = {
   },
 
   // Users
-  listUsers: async (params?: { role?: string; q?: string }) => {
+  listUsers: async (params?: { role?: string; q?: string; blocked?: string; limit?: number }) => {
     const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/users', {
       params,
     })

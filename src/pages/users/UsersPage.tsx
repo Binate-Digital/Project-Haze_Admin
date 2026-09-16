@@ -1,18 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Badge, Button, Card, EmptyState, Field, PageHeader, inputClass } from '@/components/ui'
+import { Badge, Button, PageHeader, inputClass } from '@/components/ui'
+import {
+  DataTable,
+  FilterBar,
+  FilterField,
+  useClientPagination,
+  type DataTableColumn,
+} from '@/components/DataTable'
+import { ROUTES } from '@/config'
+
+type UserRow = Record<string, unknown>
 
 export default function UsersPage() {
-  const [rows, setRows] = useState<Record<string, unknown>[]>([])
+  const [rows, setRows] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState('all')
+  const [blocked, setBlocked] = useState('all')
   const [q, setQ] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [verified, setVerified] = useState('all')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = async () => {
     setLoading(true)
@@ -20,8 +31,11 @@ export default function UsersPage() {
       const data = await adminApi.listUsers({
         role: role === 'all' ? undefined : role,
         q: q.trim() || undefined,
+        blocked: blocked === 'all' ? undefined : blocked,
+        limit: 500,
       })
       setRows(Array.isArray(data) ? data : [])
+      setPage(1)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
@@ -32,131 +46,161 @@ export default function UsersPage() {
   useEffect(() => {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role])
+  }, [role, blocked])
 
-  const toggleBlock = async (userId: string, blocked: boolean) => {
+  const filtered = useMemo(() => {
+    if (verified === 'all') return rows
+    return rows.filter((row) =>
+      verified === 'yes' ? Boolean(row.isVerified) : !row.isVerified,
+    )
+  }, [rows, verified])
+
+  const { pageRows, total, safePage } = useClientPagination(filtered, page, pageSize)
+
+  const toggleBlock = async (userId: string, nextBlocked: boolean) => {
     try {
-      await adminApi.setUserBlocked(userId, blocked)
-      toast.success(blocked ? 'User blocked' : 'User unblocked')
+      await adminApi.setUserBlocked(userId, nextBlocked)
+      toast.success(nextBlocked ? 'User blocked' : 'User unblocked')
       await load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
   }
 
-  const createAdmin = async () => {
-    if (!email.trim() || !password) {
-      toast.error('Email and password required')
-      return
-    }
-    setSaving(true)
-    try {
-      await adminApi.createSubAdmin({
-        email: email.trim(),
-        password,
-        fullName: fullName.trim() || undefined,
-      })
-      toast.success('Sub-admin created')
-      setEmail('')
-      setPassword('')
-      setFullName('')
-      setRole('admin')
-      await load()
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    } finally {
-      setSaving(false)
-    }
-  }
+  const columns: DataTableColumn<UserRow>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: (row) => (
+        <div>
+          <p className="font-medium">
+            {String(row.fullName || row.businessName || row.userName || '—')}
+          </p>
+          <p className="text-xs text-[var(--haze-muted)]">{String(row.email || '')}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      render: (row) => <Badge>{String(row.role)}</Badge>,
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      render: (row) => String(row.phoneNumber || '—'),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row) =>
+        row.isBlocked ? <Badge tone="bad">blocked</Badge> : <Badge tone="ok">active</Badge>,
+    },
+    {
+      key: 'verified',
+      header: 'Verified',
+      render: (row) =>
+        row.isVerified ? <Badge tone="ok">yes</Badge> : <Badge tone="warn">no</Badge>,
+    },
+    {
+      key: 'created',
+      header: 'Created',
+      render: (row) =>
+        row.createdAt ? new Date(String(row.createdAt)).toLocaleDateString() : '—',
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (row) => (
+        <Button
+          variant={row.isBlocked ? 'secondary' : 'danger'}
+          onClick={() => void toggleBlock(String(row._id), !row.isBlocked)}
+        >
+          {row.isBlocked ? 'Unblock' : 'Block'}
+        </Button>
+      ),
+    },
+  ]
 
   return (
-    <div className="space-y-8">
+    <div>
       <PageHeader
         title="Users"
-        description="Search users, block/unblock accounts, and create sub-admins."
-        actions={<Button onClick={() => void load()}>Refresh</Button>}
+        description="All platform users with filters and pagination."
+        actions={
+          <>
+            <Button variant="ghost" onClick={() => void load()}>
+              Refresh
+            </Button>
+            <Link to={ROUTES.USERS_CREATE_SUBADMIN}>
+              <Button>Create sub-admin</Button>
+            </Link>
+          </>
+        }
       />
 
-      <Card className="space-y-4">
-        <h2 className="text-lg font-medium">Create sub-admin</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Full name">
-            <input className={inputClass} value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          </Field>
-          <Field label="Email">
-            <input className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
-          </Field>
-          <Field label="Password">
-            <input
-              type="password"
-              className={inputClass}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Field>
-        </div>
-        <Button disabled={saving} onClick={() => void createAdmin()}>
-          {saving ? 'Creating…' : 'Create sub-admin'}
-        </Button>
-      </Card>
-
-      <Card className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Field label="Role">
+      <FilterBar>
+        <FilterField label="Role">
           <select className={inputClass} value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="all">all</option>
-            <option value="user">user</option>
-            <option value="business">business</option>
-            <option value="admin">admin</option>
+            <option value="all">All</option>
+            <option value="user">User</option>
+            <option value="business">Business</option>
+            <option value="admin">Admin</option>
           </select>
-        </Field>
-        <Field label="Search">
+        </FilterField>
+        <FilterField label="Blocked">
+          <select
+            className={inputClass}
+            value={blocked}
+            onChange={(e) => setBlocked(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="false">Active</option>
+            <option value="true">Blocked</option>
+          </select>
+        </FilterField>
+        <FilterField label="Verified">
+          <select
+            className={inputClass}
+            value={verified}
+            onChange={(e) => {
+              setVerified(e.target.value)
+              setPage(1)
+            }}
+          >
+            <option value="all">All</option>
+            <option value="yes">Verified</option>
+            <option value="no">Not verified</option>
+          </select>
+        </FilterField>
+        <FilterField label="Search" className="min-w-[220px] flex-[2]">
           <input
             className={inputClass}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="email, name, phone"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void load()
+            }}
           />
-        </Field>
-        <Button onClick={() => void load()}>Search</Button>
-      </Card>
+        </FilterField>
+        <Button onClick={() => void load()}>Apply</Button>
+      </FilterBar>
 
-      {loading ? (
-        <p className="text-sm text-[var(--haze-muted)]">Loading…</p>
-      ) : rows.length === 0 ? (
-        <EmptyState message="No users found." />
-      ) : (
-        <div className="space-y-3">
-          {rows.map((row) => {
-            const id = String(row._id)
-            const blocked = Boolean(row.isBlocked)
-            return (
-              <Card
-                key={id}
-                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-medium">
-                      {String(row.fullName || row.businessName || row.email || 'User')}
-                    </h3>
-                    <Badge>{String(row.role)}</Badge>
-                    {blocked ? <Badge tone="bad">blocked</Badge> : <Badge tone="ok">active</Badge>}
-                  </div>
-                  <p className="text-sm text-[var(--haze-muted)]">
-                    {String(row.email || '')} {row.phoneNumber ? `· ${String(row.phoneNumber)}` : ''}
-                  </p>
-                </div>
-                <Button
-                  variant={blocked ? 'secondary' : 'danger'}
-                  onClick={() => void toggleBlock(id, !blocked)}
-                >
-                  {blocked ? 'Unblock' : 'Block'}
-                </Button>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        rows={pageRows}
+        loading={loading}
+        page={safePage}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          setPage(1)
+        }}
+        rowKey={(row) => String(row._id)}
+      />
     </div>
   )
 }
