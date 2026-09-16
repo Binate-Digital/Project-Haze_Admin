@@ -77,6 +77,20 @@ export default function NotificationsPage() {
           <p>Skipped (no token): {String(lastResult.skippedNoToken ?? '—')}</p>
           <p>Skipped (disabled): {String(lastResult.skippedDisabled ?? '—')}</p>
           <p>Failed: {String(lastResult.failed ?? '—')}</p>
+          {lastResult.failReasons &&
+          typeof lastResult.failReasons === 'object' &&
+          Object.keys(lastResult.failReasons as object).length ? (
+            <div className="mt-3 space-y-1 border-t border-[var(--haze-border)] pt-3">
+              <p className="font-medium text-[var(--haze-text)]">FCM fail reasons</p>
+              {Object.entries(lastResult.failReasons as Record<string, number>).map(
+                ([reason, count]) => (
+                  <p key={reason}>
+                    {count}× {reason}
+                  </p>
+                ),
+              )}
+            </div>
+          ) : null}
         </Card>
       ) : null}
     </div>
