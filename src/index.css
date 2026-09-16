@@ -13,7 +13,8 @@
   --haze-panel: #141c18;
   --haze-border: #2a3a32;
   --haze-accent: #39ff14;
-  --haze-accent-2: #7a00a3;
+  /* Brand purple — secondary button borders / soft fills (text stays white) */
+  --haze-accent-2: #9d4edd;
   --haze-text: #f2f7f3;
   --haze-muted: #a3b5aa;
 }

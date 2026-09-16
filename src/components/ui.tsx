@@ -51,15 +51,26 @@ export function Button({
   children: ReactNode
   onClick?: () => void
   type?: 'button' | 'submit'
-  variant?: 'primary' | 'ghost' | 'danger' | 'secondary'
+  /** primary/success = green CTA · secondary = purple (Edit etc.) · ghost = quiet · danger = red */
+  variant?: 'primary' | 'success' | 'secondary' | 'ghost' | 'danger'
   disabled?: boolean
   className?: string
 }) {
   const styles = {
-    primary: 'bg-[var(--haze-accent)] text-[#102012] hover:opacity-90',
-    secondary: 'bg-[var(--haze-accent-2)]/20 text-[var(--haze-accent-2)] hover:bg-[var(--haze-accent-2)]/30',
-    ghost: 'border border-[var(--haze-border)] hover:bg-white/5',
-    danger: 'bg-red-500/15 text-red-300 hover:bg-red-500/25',
+    // Main CTA / Approve / Create / Save
+    primary:
+      'border border-transparent bg-[var(--haze-neon)] text-[#06200a] font-semibold hover:bg-[var(--haze-neon-soft)]',
+    success:
+      'border border-transparent bg-[var(--haze-neon)] text-[#06200a] font-semibold hover:bg-[var(--haze-neon-soft)]',
+    // Edit / Feature / Pause / Cancel — purple frame, white label (readable on dark)
+    secondary:
+      'border border-[var(--haze-accent-2)] bg-[var(--haze-accent-2)]/25 text-white hover:bg-[var(--haze-accent-2)]/40 hover:text-white',
+    // Refresh / Back / Details
+    ghost:
+      'border border-white/15 bg-transparent text-white/90 hover:bg-white/8 hover:text-[var(--haze-neon)]',
+    // Delete / Reject / Block / Refund
+    danger:
+      'border border-red-400/40 bg-red-500/20 text-red-200 hover:bg-red-500/30 hover:text-red-100',
   }[variant]
 
   return (
@@ -84,7 +95,8 @@ export function Badge({
   const map = {
     neutral: 'bg-white/10 text-[var(--haze-muted)]',
     ok: 'bg-[var(--haze-accent)]/15 text-[var(--haze-accent)]',
-    warn: 'bg-[var(--haze-accent-2)]/15 text-[var(--haze-accent-2)]',
+    // Amber — readable on dark UI (purple accent-2 was too low-contrast)
+    warn: 'bg-amber-400/15 text-amber-300 border border-amber-400/25',
     bad: 'bg-red-500/15 text-red-300',
   }
   return (
