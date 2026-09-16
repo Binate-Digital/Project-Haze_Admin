@@ -72,7 +72,11 @@ export default function NotificationsPage() {
         <Card className="space-y-1 text-sm text-[var(--haze-muted)]">
           <p>Audience: {String(lastResult.audience)}</p>
           <p>Targeted: {String(lastResult.targeted)}</p>
-          <p>Delivered / stored: {String(lastResult.deliveredOrStored)}</p>
+          <p>Pushed (FCM): {String(lastResult.pushed ?? '—')}</p>
+          <p>Stored (in-app): {String(lastResult.stored ?? '—')}</p>
+          <p>Skipped (no token): {String(lastResult.skippedNoToken ?? '—')}</p>
+          <p>Skipped (disabled): {String(lastResult.skippedDisabled ?? '—')}</p>
+          <p>Failed: {String(lastResult.failed ?? '—')}</p>
         </Card>
       ) : null}
     </div>

@@ -158,7 +158,7 @@ export function AdminLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="relative sticky top-0 z-20 flex min-h-[64px] items-center justify-end overflow-hidden border-b border-white/10 px-6 py-3">
+        <header className="relative sticky top-0 z-50 flex min-h-[64px] items-center justify-end border-b border-white/10 px-6 py-3">
           {/* Rotate tall bg1 so purple→green runs left→right (same look as sidebar) */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
             <div
@@ -207,8 +207,11 @@ export function AdminLayout() {
             </button>
 
             {menuOpen ? (
-              <div className="absolute right-0 top-full z-30 mt-2 w-56" role="menu">
-                <div className="overflow-hidden rounded-xl border border-white/15 bg-[#141c18]/95 shadow-xl backdrop-blur-md">
+              <div
+                className="absolute right-0 top-full z-[60] mt-2 w-56"
+                role="menu"
+              >
+                <div className="overflow-hidden rounded-xl border border-white/15 bg-[#141c18] shadow-2xl">
                   <div className="border-b border-white/10 px-3 py-2.5 sm:hidden">
                     <p className="truncate text-sm font-medium">{displayName}</p>
                     <p className="truncate text-xs text-[var(--haze-muted)]">{displayEmail}</p>
