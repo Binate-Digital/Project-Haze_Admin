@@ -25,6 +25,9 @@ import NotificationsPage from '@/pages/notifications/NotificationsPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
 import OrdersPage from '@/pages/orders/OrdersPage'
 import AnalyticsPage from '@/pages/analytics/AnalyticsPage'
+import SettingsPage from '@/pages/settings/SettingsPage'
+import LoyaltyCouponsPage from '@/pages/loyalty-coupons/LoyaltyCouponsPage'
+import LoyaltyCouponFormPage from '@/pages/loyalty-coupons/LoyaltyCouponFormPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import UpdatePasswordPage from '@/pages/profile/UpdatePasswordPage'
 import { useAuthStore } from '@/store/auth.store'
@@ -67,6 +70,10 @@ export default function App() {
             <Route path={ROUTES.PACKAGES} element={<PackagesPage />} />
             <Route path={ROUTES.PACKAGES_CREATE} element={<PackageFormPage />} />
             <Route path={ROUTES.PACKAGES_EDIT} element={<PackageFormPage />} />
+            <Route path={ROUTES.LOYALTY_COUPONS} element={<LoyaltyCouponsPage />} />
+            <Route path={ROUTES.LOYALTY_COUPONS_CREATE} element={<LoyaltyCouponFormPage />} />
+            <Route path={ROUTES.LOYALTY_COUPONS_EDIT} element={<LoyaltyCouponFormPage />} />
+            <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
             <Route path={ROUTES.NOTIFICATIONS} element={<NotificationsPage />} />
             <Route path={ROUTES.REPORTS} element={<ReportsPage />} />
             <Route path={ROUTES.LEGAL} element={<LegalPage />} />

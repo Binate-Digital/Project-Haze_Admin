@@ -283,4 +283,64 @@ export const adminApi = {
     const { data } = await api.delete<ApiEnvelope<unknown>>(`/admin/courses/${courseId}`)
     return unwrap(data, data.message)
   },
+
+  // Platform settings (tax + commission)
+  getPlatformSettings: async () => {
+    const { data } = await api.get<
+      ApiEnvelope<{
+        taxRate: number
+        taxPercent: number
+        commissionRate: number
+        commissionPercent: number
+        updatedAt?: string | null
+      }>
+    >('/admin/settings/platform')
+    return unwrap(data)
+  },
+  updatePlatformSettings: async (payload: {
+    taxPercent?: number
+    commissionPercent?: number
+    taxRate?: number
+    commissionRate?: number
+  }) => {
+    const { data } = await api.patch<
+      ApiEnvelope<{
+        taxRate: number
+        taxPercent: number
+        commissionRate: number
+        commissionPercent: number
+        updatedAt?: string | null
+      }>
+    >('/admin/settings/platform', payload)
+    return unwrap(data, data.message)
+  },
+
+  // Loyalty coupons CMS
+  listLoyaltyCoupons: async (active?: boolean) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>(
+      '/admin/loyalty-coupons',
+      {
+        params:
+          active === undefined
+            ? undefined
+            : { active: active ? 'true' : 'false' },
+      },
+    )
+    return unwrap(data)
+  },
+  createLoyaltyCoupon: async (payload: Record<string, unknown>) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>('/admin/loyalty-coupons', payload)
+    return unwrap(data, data.message)
+  },
+  updateLoyaltyCoupon: async (couponId: string, payload: Record<string, unknown>) => {
+    const { data } = await api.patch<ApiEnvelope<unknown>>(
+      `/admin/loyalty-coupons/${couponId}`,
+      payload,
+    )
+    return unwrap(data, data.message)
+  },
+  deleteLoyaltyCoupon: async (couponId: string) => {
+    const { data } = await api.delete<ApiEnvelope<unknown>>(`/admin/loyalty-coupons/${couponId}`)
+    return unwrap(data, data.message)
+  },
 }

@@ -18,6 +18,8 @@ import {
   Flag,
   ShoppingBag,
   BarChart3,
+  Settings,
+  TicketPercent,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
@@ -37,6 +39,8 @@ const ICONS: Record<string, typeof LayoutDashboard> = {
   [ROUTES.ADS]: Megaphone,
   [ROUTES.ORDERS]: ShoppingBag,
   [ROUTES.PACKAGES]: Package,
+  [ROUTES.LOYALTY_COUPONS]: TicketPercent,
+  [ROUTES.SETTINGS]: Settings,
   [ROUTES.NOTIFICATIONS]: Bell,
   [ROUTES.REPORTS]: Flag,
   [ROUTES.LEGAL]: Scale,
