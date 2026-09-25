@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Button, Card, Field, PageHeader, inputClass, textareaClass } from '@/components/ui'
+import { Button, Card, Field, PageHeader, fieldClass, textareaFieldClass } from '@/components/ui'
 
 export default function NotificationsPage() {
   const [title, setTitle] = useState('')
@@ -10,10 +10,15 @@ export default function NotificationsPage() {
   const [audience, setAudience] = useState<'all' | 'users' | 'business'>('all')
   const [saving, setSaving] = useState(false)
   const [lastResult, setLastResult] = useState<Record<string, unknown> | null>(null)
+  const [errors, setErrors] = useState<{ title?: string; body?: string }>({})
 
   const send = async () => {
-    if (!title.trim() || !body.trim()) {
-      toast.error('Title and message are required')
+    const next: typeof errors = {}
+    if (!title.trim()) next.title = 'Title is required'
+    if (!body.trim()) next.body = 'Message is required'
+    setErrors(next)
+    if (Object.keys(next).length) {
+      toast.error('Please fix the highlighted fields')
       return
     }
     setSaving(true)
@@ -44,7 +49,7 @@ export default function NotificationsPage() {
       <Card className="space-y-4">
         <Field label="Audience">
           <select
-            className={inputClass}
+            className={fieldClass()}
             value={audience}
             onChange={(e) => setAudience(e.target.value as 'all' | 'users' | 'business')}
           >
@@ -53,14 +58,24 @@ export default function NotificationsPage() {
             <option value="business">Businesses only</option>
           </select>
         </Field>
-        <Field label="Title">
-          <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Field label="Title" error={errors.title}>
+          <input
+            className={fieldClass(Boolean(errors.title))}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value)
+              if (errors.title) setErrors((p) => ({ ...p, title: undefined }))
+            }}
+          />
         </Field>
-        <Field label="Message">
+        <Field label="Message" error={errors.body}>
           <textarea
-            className={textareaClass}
+            className={textareaFieldClass(Boolean(errors.body))}
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => {
+              setBody(e.target.value)
+              if (errors.body) setErrors((p) => ({ ...p, body: undefined }))
+            }}
           />
         </Field>
         <Button disabled={saving} onClick={() => void send()}>

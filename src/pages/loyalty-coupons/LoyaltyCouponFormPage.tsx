@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Button, Card, Field, PageHeader, inputClass, textareaClass } from '@/components/ui'
+import { Button, Card, Field, PageHeader, fieldClass, textareaFieldClass } from '@/components/ui'
 import { ROUTES } from '@/config'
 
 const emptyForm = {
@@ -36,6 +36,11 @@ export default function LoyaltyCouponFormPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
+  const [errors, setErrors] = useState<{
+    title?: string
+    pointsRequired?: string
+    discountValue?: string
+  }>({})
 
   useEffect(() => {
     if (!couponId) return
@@ -81,18 +86,19 @@ export default function LoyaltyCouponFormPage() {
   }
 
   const save = async () => {
-    if (!form.title.trim()) {
-      toast.error('Title is required')
-      return
-    }
+    const next: typeof errors = {}
+    if (!form.title.trim()) next.title = 'Title is required'
     const pointsRequired = Number(form.pointsRequired)
     const discountValue = Number(form.discountValue)
     if (!Number.isFinite(pointsRequired) || pointsRequired < 1) {
-      toast.error('Points required must be at least 1')
-      return
+      next.pointsRequired = 'Points required must be at least 1'
     }
     if (!Number.isFinite(discountValue) || discountValue < 0) {
-      toast.error('Discount value is invalid')
+      next.discountValue = 'Discount value is invalid'
+    }
+    setErrors(next)
+    if (Object.keys(next).length) {
+      toast.error('Please fix the highlighted fields')
       return
     }
 
@@ -143,34 +149,40 @@ export default function LoyaltyCouponFormPage() {
         }
       />
       <Card className="space-y-4">
-        <Field label="Title">
+        <Field label="Title" error={errors.title}>
           <input
-            className={inputClass}
+            className={fieldClass(Boolean(errors.title))}
             value={form.title}
-            onChange={(e) => set('title', e.target.value)}
+            onChange={(e) => {
+              set('title', e.target.value)
+              if (errors.title) setErrors((p) => ({ ...p, title: undefined }))
+            }}
           />
         </Field>
         <Field label="Description">
           <textarea
-            className={textareaClass}
+            className={textareaFieldClass()}
             rows={3}
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
           />
         </Field>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Points required">
+          <Field label="Points required" error={errors.pointsRequired}>
             <input
-              className={inputClass}
+              className={fieldClass(Boolean(errors.pointsRequired))}
               type="number"
               min={1}
               value={form.pointsRequired}
-              onChange={(e) => set('pointsRequired', e.target.value)}
+              onChange={(e) => {
+                set('pointsRequired', e.target.value)
+                if (errors.pointsRequired) setErrors((p) => ({ ...p, pointsRequired: undefined }))
+              }}
             />
           </Field>
           <Field label="Discount type">
             <select
-              className={inputClass}
+              className={fieldClass()}
               value={form.discountType}
               onChange={(e) => set('discountType', e.target.value as 'fixed' | 'percent')}
             >
@@ -178,19 +190,22 @@ export default function LoyaltyCouponFormPage() {
               <option value="percent">Percent (%)</option>
             </select>
           </Field>
-          <Field label="Discount value">
+          <Field label="Discount value" error={errors.discountValue}>
             <input
-              className={inputClass}
+              className={fieldClass(Boolean(errors.discountValue))}
               type="number"
               min={0}
               step={0.01}
               value={form.discountValue}
-              onChange={(e) => set('discountValue', e.target.value)}
+              onChange={(e) => {
+                set('discountValue', e.target.value)
+                if (errors.discountValue) setErrors((p) => ({ ...p, discountValue: undefined }))
+              }}
             />
           </Field>
           <Field label="Min order amount ($)">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="number"
               min={0}
               step={0.01}
@@ -200,7 +215,7 @@ export default function LoyaltyCouponFormPage() {
           </Field>
           <Field label="Max discount ($, optional)">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="number"
               min={0}
               step={0.01}
@@ -211,7 +226,7 @@ export default function LoyaltyCouponFormPage() {
           </Field>
           <Field label="Usage limit per user">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="number"
               min={1}
               value={form.usageLimitPerUser}
@@ -220,7 +235,7 @@ export default function LoyaltyCouponFormPage() {
           </Field>
           <Field label="Global usage limit (optional)">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="number"
               min={1}
               value={form.usageLimit}
@@ -230,7 +245,7 @@ export default function LoyaltyCouponFormPage() {
           </Field>
           <Field label="Active">
             <select
-              className={inputClass}
+              className={fieldClass()}
               value={form.isActive ? 'yes' : 'no'}
               onChange={(e) => set('isActive', e.target.value === 'yes')}
             >
@@ -240,7 +255,7 @@ export default function LoyaltyCouponFormPage() {
           </Field>
           <Field label="Starts at (optional)">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="datetime-local"
               value={form.startsAt}
               onChange={(e) => set('startsAt', e.target.value)}
@@ -248,7 +263,7 @@ export default function LoyaltyCouponFormPage() {
           </Field>
           <Field label="Expires at (optional)">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="datetime-local"
               value={form.expiresAt}
               onChange={(e) => set('expiresAt', e.target.value)}

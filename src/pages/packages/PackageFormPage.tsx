@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Button, Card, Field, PageHeader, inputClass, textareaClass } from '@/components/ui'
+import { Button, Card, Field, PageHeader, fieldClass, textareaFieldClass } from '@/components/ui'
 import { ROUTES } from '@/config'
 
 const emptyForm = {
@@ -23,6 +23,7 @@ export default function PackageFormPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
+  const [errors, setErrors] = useState<{ packageName?: string; features?: string }>({})
 
   useEffect(() => {
     if (!packageId) return
@@ -59,18 +60,19 @@ export default function PackageFormPage() {
   }, [packageId, navigate])
 
   const save = async () => {
-    if (!form.packageName.trim()) {
-      toast.error('Package name is required')
-      return
-    }
     const features = form.features
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean)
-    if (!features.length) {
-      toast.error('Add at least one feature')
+    const next: typeof errors = {}
+    if (!form.packageName.trim()) next.packageName = 'Package name is required'
+    if (!features.length) next.features = 'Add at least one feature'
+    setErrors(next)
+    if (Object.keys(next).length) {
+      toast.error('Please fix the highlighted fields')
       return
     }
+
     setSaving(true)
     try {
       if (isEdit && packageId) {
@@ -117,16 +119,19 @@ export default function PackageFormPage() {
       />
       <Card className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Package name">
+          <Field label="Package name" error={errors.packageName}>
             <input
-              className={inputClass}
+              className={fieldClass(Boolean(errors.packageName))}
               value={form.packageName}
-              onChange={(e) => setForm((f) => ({ ...f, packageName: e.target.value }))}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, packageName: e.target.value }))
+                if (errors.packageName) setErrors((p) => ({ ...p, packageName: undefined }))
+              }}
             />
           </Field>
           <Field label="Type">
             <select
-              className={inputClass}
+              className={fieldClass()}
               value={form.packageType}
               onChange={(e) =>
                 setForm((f) => ({ ...f, packageType: e.target.value as 'store' | 'ads' }))
@@ -138,7 +143,7 @@ export default function PackageFormPage() {
           </Field>
           <Field label="Price">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="number"
               value={form.price}
               onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
@@ -146,7 +151,7 @@ export default function PackageFormPage() {
           </Field>
           <Field label="Duration (days)">
             <input
-              className={inputClass}
+              className={fieldClass()}
               type="number"
               value={form.durationInDays}
               onChange={(e) => setForm((f) => ({ ...f, durationInDays: e.target.value }))}
@@ -155,16 +160,19 @@ export default function PackageFormPage() {
         </div>
         <Field label="Description">
           <input
-            className={inputClass}
+            className={fieldClass()}
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
         </Field>
-        <Field label="Features (one per line)">
+        <Field label="Features (one per line)" error={errors.features}>
           <textarea
-            className={textareaClass}
+            className={textareaFieldClass(Boolean(errors.features))}
             value={form.features}
-            onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, features: e.target.value }))
+              if (errors.features) setErrors((p) => ({ ...p, features: undefined }))
+            }}
           />
         </Field>
         {isEdit ? (

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Button, Card, Field, PageHeader, inputClass, textareaClass } from '@/components/ui'
+import { Button, Card, Field, PageHeader, fieldClass, textareaFieldClass } from '@/components/ui'
 import { ROUTES } from '@/config'
 
 const TYPES = ['terms_conditions', 'privacy_policy'] as const
@@ -17,6 +17,7 @@ export default function LegalFormPage() {
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
+  const [errors, setErrors] = useState<{ title?: string; content?: string }>({})
 
   useEffect(() => {
     if (!legalId) return
@@ -46,8 +47,12 @@ export default function LegalFormPage() {
   }, [legalId, navigate])
 
   const save = async () => {
-    if (!title.trim() || !content.trim()) {
-      toast.error('Title and content are required')
+    const next: typeof errors = {}
+    if (!title.trim()) next.title = 'Title is required'
+    if (!content.trim()) next.content = 'Content is required'
+    setErrors(next)
+    if (Object.keys(next).length) {
+      toast.error('Please fix the highlighted fields')
       return
     }
     setSaving(true)
@@ -92,7 +97,7 @@ export default function LegalFormPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Type">
             <select
-              className={inputClass}
+              className={fieldClass()}
               value={type}
               onChange={(e) => setType(e.target.value as (typeof TYPES)[number])}
             >
@@ -103,16 +108,26 @@ export default function LegalFormPage() {
               ))}
             </select>
           </Field>
-          <Field label="Title">
-            <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Field label="Title" error={errors.title}>
+            <input
+              className={fieldClass(Boolean(errors.title))}
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                if (errors.title) setErrors((p) => ({ ...p, title: undefined }))
+              }}
+            />
           </Field>
         </div>
-        <Field label="Content">
+        <Field label="Content" error={errors.content}>
           <textarea
-            className={textareaClass}
+            className={textareaFieldClass(Boolean(errors.content))}
             rows={12}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value)
+              if (errors.content) setErrors((p) => ({ ...p, content: undefined }))
+            }}
           />
         </Field>
         <Button disabled={saving} onClick={() => void save()}>

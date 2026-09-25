@@ -109,6 +109,9 @@ export default function EducationPage() {
       header: 'Actions',
       render: (row) => (
         <div className="flex gap-2">
+          <Link to={`/education/${String(row._id)}/edit`}>
+            <Button variant="secondary">Edit</Button>
+          </Link>
           <Button variant="secondary" onClick={() => void togglePublish(row)}>
             {row.isPublished ? 'Unpublish' : 'Publish'}
           </Button>

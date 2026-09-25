@@ -64,6 +64,7 @@ export default function App() {
             <Route path={ROUTES.BLOGS_EDIT} element={<BlogFormPage />} />
             <Route path={ROUTES.EDUCATION} element={<EducationPage />} />
             <Route path={ROUTES.EDUCATION_CREATE} element={<CreateCoursePage />} />
+            <Route path={ROUTES.EDUCATION_EDIT} element={<CreateCoursePage />} />
             <Route path={ROUTES.EDUCATION_CONTRIBUTIONS} element={<ContributionsPage />} />
             <Route path={ROUTES.ADS} element={<AdsPage />} />
             <Route path={ROUTES.ORDERS} element={<OrdersPage />} />

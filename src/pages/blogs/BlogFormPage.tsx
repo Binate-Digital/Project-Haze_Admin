@@ -9,8 +9,8 @@ import {
   Field,
   FileUpload,
   PageHeader,
-  inputClass,
-  textareaClass,
+  fieldClass,
+  textareaFieldClass,
 } from '@/components/ui'
 import { ROUTES } from '@/config'
 
@@ -30,6 +30,7 @@ export default function BlogFormPage() {
   const [coverFiles, setCoverFiles] = useState<File[]>([])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<{ title?: string; content?: string; cover?: string }>({})
 
   useEffect(() => {
     let alive = true
@@ -83,14 +84,16 @@ export default function BlogFormPage() {
   }, [blogId, navigate])
 
   const save = async () => {
-    if (!title.trim() || !content.trim()) {
-      toast.error('Title and content are required')
+    const next: typeof errors = {}
+    if (!title.trim()) next.title = 'Title is required'
+    if (!content.trim()) next.content = 'Content is required'
+    if (!isEdit && !coverFiles[0] && !existingImage) next.cover = 'Cover image is required'
+    setErrors(next)
+    if (Object.keys(next).length) {
+      toast.error('Please fix the highlighted fields')
       return
     }
-    if (!isEdit && !coverFiles[0]) {
-      toast.error('Cover image is required')
-      return
-    }
+
     setSaving(true)
     try {
       const form = new FormData()
@@ -133,20 +136,30 @@ export default function BlogFormPage() {
       />
 
       <Card className="space-y-4 p-6">
-        <Field label="Title">
-          <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Field label="Title" error={errors.title}>
+          <input
+            className={fieldClass(Boolean(errors.title))}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value)
+              if (errors.title) setErrors((p) => ({ ...p, title: undefined }))
+            }}
+          />
         </Field>
-        <Field label="Content">
+        <Field label="Content" error={errors.content}>
           <textarea
-            className={textareaClass}
+            className={textareaFieldClass(Boolean(errors.content))}
             rows={10}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value)
+              if (errors.content) setErrors((p) => ({ ...p, content: undefined }))
+            }}
           />
         </Field>
         <Field label="Author (optional business)">
           <select
-            className={inputClass}
+            className={fieldClass()}
             value={businessUserId}
             onChange={(e) => setBusinessUserId(e.target.value)}
           >
@@ -158,23 +171,17 @@ export default function BlogFormPage() {
             ))}
           </select>
         </Field>
-        <Field label="Cover image">
-          {existingImage ? (
-            <a href={existingImage} target="_blank" rel="noreferrer" className="mb-2 block">
-              <img
-                src={existingImage}
-                alt=""
-                className="h-28 w-44 rounded-lg object-cover border border-[var(--haze-border)]"
-              />
-            </a>
-          ) : null}
-          <FileUpload
-            label="Upload cover"
-            accept="image/*"
-            files={coverFiles}
-            onChange={setCoverFiles}
-          />
-        </Field>
+        <FileUpload
+          label="Cover image"
+          accept="image/*"
+          files={coverFiles}
+          existingUrl={existingImage}
+          error={errors.cover}
+          onChange={(files) => {
+            setCoverFiles(files)
+            if (errors.cover) setErrors((p) => ({ ...p, cover: undefined }))
+          }}
+        />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} />
           Publish immediately (approved + active)

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth.store'
 import { getApiErrorMessage } from '@/services/api'
+import { fieldClass } from '@/components/ui'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -58,7 +59,7 @@ export default function LoginPage() {
           <input
             type="email"
             autoComplete="email"
-            className="w-full rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)] px-3 py-2.5 outline-none focus:border-[var(--haze-accent)]"
+            className={fieldClass(Boolean(form.formState.errors.email))}
             placeholder="admin@haze.app"
             {...form.register('email')}
           />
@@ -72,7 +73,7 @@ export default function LoginPage() {
           <input
             type="password"
             autoComplete="current-password"
-            className="w-full rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)] px-3 py-2.5 outline-none focus:border-[var(--haze-accent)]"
+            className={fieldClass(Boolean(form.formState.errors.password))}
             placeholder="••••••••"
             {...form.register('password')}
           />

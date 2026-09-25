@@ -23,6 +23,9 @@ function readStoredToken(): string | null {
   return localStorage.getItem(STORAGE_KEYS.TOKEN) || sessionStorage.getItem(STORAGE_KEYS.TOKEN)
 }
 
+const initialUser = readStoredUser()
+const initialToken = readStoredToken()
+
 type AuthState = {
   user: AdminUser | null
   token: string | null
@@ -34,9 +37,10 @@ type AuthState = {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
+  // Hydrate synchronously so refresh keeps the current route (no flash to login/dashboard)
+  user: initialUser,
+  token: initialToken,
+  isAuthenticated: !!(initialUser && initialToken),
 
   hydrate: () => {
     const user = readStoredUser()

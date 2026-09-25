@@ -15,6 +15,7 @@ export const ROUTES = {
   BLOGS_EDIT: '/blogs/:blogId/edit',
   EDUCATION: '/education',
   EDUCATION_CREATE: '/education/create',
+  EDUCATION_EDIT: '/education/:courseId/edit',
   EDUCATION_CONTRIBUTIONS: '/education/contributions',
   ADS: '/ads',
   PACKAGES: '/packages',

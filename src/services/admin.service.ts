@@ -84,14 +84,27 @@ export const adminApi = {
     )
     return unwrap(data)
   },
+  getContributions: async (status?: string) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>(
+      '/admin/education/contributions',
+      { params: status ? { status } : undefined },
+    )
+    return unwrap(data)
+  },
+  getContribution: async (contributionId: string) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>>>(
+      `/admin/education/contributions/${contributionId}`,
+    )
+    return unwrap(data)
+  },
   reviewContribution: async (
     contributionId: string,
     action: 'approve' | 'reject',
-    adminNote?: string,
+    reason?: string,
   ) => {
     const { data } = await api.post<ApiEnvelope<unknown>>(
       `/admin/education/contributions/${contributionId}/review`,
-      { action, adminNote },
+      { action, reason, adminNote: reason, rejectReason: reason },
     )
     return unwrap(data, data.message)
   },
@@ -271,6 +284,12 @@ export const adminApi = {
   // Courses CMS
   listCourses: async () => {
     const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/courses')
+    return unwrap(data)
+  },
+  getCourse: async (courseId: string) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>>>(
+      `/admin/courses/${courseId}`,
+    )
     return unwrap(data)
   },
   updateCourse: async (courseId: string, form: FormData) => {

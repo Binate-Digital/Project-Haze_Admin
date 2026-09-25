@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
 import { getApiErrorMessage } from '@/services/api'
+import { fieldClass } from '@/components/ui'
 
 const emailSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -96,7 +97,7 @@ export default function ForgotPasswordPage() {
             <label className="text-sm text-[var(--haze-muted)]">Email</label>
             <input
               type="email"
-              className="w-full rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)] px-3 py-2.5 outline-none focus:border-[var(--haze-accent)]"
+              className={fieldClass(Boolean(emailForm.formState.errors.email))}
               placeholder="admin@haze.app"
               {...emailForm.register('email')}
             />
@@ -124,7 +125,7 @@ export default function ForgotPasswordPage() {
           <div className="space-y-1.5">
             <label className="text-sm text-[var(--haze-muted)]">OTP</label>
             <input
-              className="w-full rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)] px-3 py-2.5 outline-none focus:border-[var(--haze-accent)]"
+              className={fieldClass(Boolean(otpForm.formState.errors.otp))}
               placeholder="123456"
               {...otpForm.register('otp')}
             />
@@ -148,7 +149,7 @@ export default function ForgotPasswordPage() {
             <label className="text-sm text-[var(--haze-muted)]">New password</label>
             <input
               type="password"
-              className="w-full rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)] px-3 py-2.5 outline-none focus:border-[var(--haze-accent)]"
+              className={fieldClass(Boolean(passwordForm.formState.errors.newPassword))}
               {...passwordForm.register('newPassword')}
             />
             {passwordForm.formState.errors.newPassword && (
@@ -161,7 +162,7 @@ export default function ForgotPasswordPage() {
             <label className="text-sm text-[var(--haze-muted)]">Confirm password</label>
             <input
               type="password"
-              className="w-full rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)] px-3 py-2.5 outline-none focus:border-[var(--haze-accent)]"
+              className={fieldClass(Boolean(passwordForm.formState.errors.confirmPassword))}
               {...passwordForm.register('confirmPassword')}
             />
             {passwordForm.formState.errors.confirmPassword && (

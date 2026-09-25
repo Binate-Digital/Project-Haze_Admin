@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { adminApi } from '@/services/admin.service'
 import { getApiErrorMessage } from '@/services/api'
-import { Button, Card, Field, PageHeader, inputClass } from '@/components/ui'
+import { Button, Card, Field, PageHeader, fieldClass } from '@/components/ui'
 import { ROUTES } from '@/config'
 
 export default function CreateSubAdminPage() {
@@ -12,10 +12,15 @@ export default function CreateSubAdminPage() {
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
 
   const submit = async () => {
-    if (!email.trim() || !password) {
-      toast.error('Email and password required')
+    const next: typeof errors = {}
+    if (!email.trim()) next.email = 'Email is required'
+    if (!password) next.password = 'Password is required'
+    setErrors(next)
+    if (Object.keys(next).length) {
+      toast.error('Please fix the highlighted fields')
       return
     }
     setSaving(true)
@@ -48,17 +53,27 @@ export default function CreateSubAdminPage() {
 
       <Card className="space-y-4">
         <Field label="Full name">
-          <input className={inputClass} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          <input className={fieldClass()} value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </Field>
-        <Field label="Email">
-          <input className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field label="Email" error={errors.email}>
+          <input
+            className={fieldClass(Boolean(errors.email))}
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (errors.email) setErrors((p) => ({ ...p, email: undefined }))
+            }}
+          />
         </Field>
-        <Field label="Password">
+        <Field label="Password" error={errors.password}>
           <input
             type="password"
-            className={inputClass}
+            className={fieldClass(Boolean(errors.password))}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              if (errors.password) setErrors((p) => ({ ...p, password: undefined }))
+            }}
           />
         </Field>
         <Button disabled={saving} onClick={() => void submit()}>

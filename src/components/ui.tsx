@@ -116,15 +116,18 @@ export function EmptyState({ message }: { message: string }) {
 
 export function Field({
   label,
+  error,
   children,
 }: {
   label: string
+  error?: string
   children: ReactNode
 }) {
   return (
     <label className="block space-y-1.5">
       <span className="text-sm text-[var(--haze-muted)]">{label}</span>
       {children}
+      {error ? <p className="text-xs text-red-400">{error}</p> : null}
     </label>
   )
 }
@@ -132,7 +135,19 @@ export function Field({
 export const inputClass =
   'w-full rounded-xl border border-[var(--haze-border)] bg-[var(--haze-bg)] px-3 py-2.5 text-sm outline-none focus:border-[var(--haze-accent)]'
 
+/** Append when a field fails validation */
+export const inputErrorClass =
+  '!border-red-400/80 focus:!border-red-400 shadow-[0_0_0_1px_rgba(248,113,113,0.25)]'
+
+export function fieldClass(hasError?: boolean, extra = '') {
+  return `${inputClass} ${hasError ? inputErrorClass : ''} ${extra}`.trim()
+}
+
 export const textareaClass = `${inputClass} min-h-28 resize-y`
+
+export function textareaFieldClass(hasError?: boolean) {
+  return `${textareaClass} ${hasError ? inputErrorClass : ''}`.trim()
+}
 
 export type MediaKind = 'image' | 'pdf' | 'word' | 'excel' | 'file'
 
@@ -286,6 +301,8 @@ export function FileUpload({
   files,
   onChange,
   hint,
+  error,
+  existingUrl,
 }: {
   label: string
   accept?: string
@@ -293,8 +310,12 @@ export function FileUpload({
   files: File[]
   onChange: (files: File[]) => void
   hint?: string
+  error?: string
+  /** Show existing remote media when no new file picked */
+  existingUrl?: string | null
 }) {
   const inputId = useId()
+  const isVideoAccept = accept.includes('video')
 
   return (
     <div className="space-y-3">
@@ -305,14 +326,20 @@ export function FileUpload({
 
       <label
         htmlFor={inputId}
-        className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--haze-border)] bg-[var(--haze-bg)] px-4 py-8 text-center transition hover:border-[var(--haze-accent)]/50 hover:bg-white/[0.02]"
+        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-[var(--haze-bg)] px-4 py-8 text-center transition hover:border-[var(--haze-accent)]/50 hover:bg-white/[0.02] ${
+          error
+            ? 'border-red-400/80 shadow-[0_0_0_1px_rgba(248,113,113,0.25)]'
+            : 'border-[var(--haze-border)]'
+        }`}
       >
         <Upload className="h-5 w-5 text-[var(--haze-accent)]" />
         <span className="text-sm">
           Click to upload {multiple ? 'files' : 'a file'}
         </span>
         <span className="text-xs text-[var(--haze-muted)]">
-          Images, PDF, Word, or Excel
+          {isVideoAccept
+            ? 'MP4, WebM, MOV, or other video'
+            : 'Images, PDF, Word, or Excel'}
         </span>
         <input
           id={inputId}
@@ -327,6 +354,7 @@ export function FileUpload({
           }}
         />
       </label>
+      {error ? <p className="text-xs text-red-400">{error}</p> : null}
 
       {files.length > 0 ? (
         <div className={`grid gap-3 ${multiple ? 'sm:grid-cols-2' : ''}`}>
@@ -338,6 +366,8 @@ export function FileUpload({
             />
           ))}
         </div>
+      ) : existingUrl ? (
+        <MediaPreviewCard url={existingUrl} />
       ) : null}
     </div>
   )
