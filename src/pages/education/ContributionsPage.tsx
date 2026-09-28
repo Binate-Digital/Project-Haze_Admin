@@ -15,6 +15,16 @@ import { ROUTES } from '@/config'
 
 type Row = Record<string, unknown>
 
+function typeLabel(row: Row): string {
+  const t = String(row.type || '')
+  if (t === 'article') return 'Article'
+  if (t === 'sponsor_course') return 'Sponsor'
+  if (t === 'host_course') {
+    return row.courseId ? 'Host — Existing course' : 'Host — New course'
+  }
+  return t
+}
+
 export default function ContributionsPage() {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,7 +38,8 @@ export default function ContributionsPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getContributions(status === 'all' ? undefined : status)
+      // Always send status so "all" is not treated as default pending by the API
+      const data = await adminApi.getContributions(status || 'pending')
       setRows(Array.isArray(data) ? data : [])
       setPage(1)
     } catch (error) {
@@ -58,7 +69,15 @@ export default function ContributionsPage() {
   const review = async (id: string, action: 'approve' | 'reject') => {
     let reason: string | undefined
     if (action === 'reject') {
-      reason = window.prompt('Reject reason (optional)') || undefined
+      const entered = window.prompt('Reject reason (required)')
+      if (entered === null) return
+      reason = entered.trim()
+      if (!reason) {
+        toast.error('Reject reason is required')
+        return
+      }
+    } else if (!window.confirm('Approve this contribution? Side-effects will go live.')) {
+      return
     }
     try {
       await adminApi.reviewContribution(id, action, reason)
@@ -98,7 +117,23 @@ export default function ContributionsPage() {
     {
       key: 'type',
       header: 'Type',
-      render: (row) => <Badge tone="warn">{String(row.type)}</Badge>,
+      render: (row) => <Badge tone="warn">{typeLabel(row)}</Badge>,
+    },
+    {
+      key: 'related',
+      header: 'Related course',
+      render: (row) => {
+        const course = row.courseId as Row | undefined
+        const name = course?.title || ''
+        const lessons = Array.isArray(row.lessons) ? row.lessons.length : 0
+        if (!name && !lessons) return <span className="text-[var(--haze-muted)]">—</span>
+        return (
+          <div className="text-xs text-[var(--haze-muted)]">
+            {name ? <p>{String(name)}</p> : null}
+            {lessons ? <p>{lessons} lesson(s)</p> : null}
+          </div>
+        )
+      },
     },
     {
       key: 'status',
@@ -110,12 +145,12 @@ export default function ContributionsPage() {
       },
     },
     {
-      key: 'description',
-      header: 'Description',
+      key: 'createdAt',
+      header: 'Submitted',
       render: (row) => (
-        <p className="max-w-sm line-clamp-2 text-[var(--haze-muted)]">
-          {String(row.description || '')}
-        </p>
+        <span className="text-xs text-[var(--haze-muted)]">
+          {row.createdAt ? new Date(String(row.createdAt)).toLocaleString() : '—'}
+        </span>
       ),
     },
     {
@@ -140,6 +175,8 @@ export default function ContributionsPage() {
   ]
 
   const detailLessons = Array.isArray(detail?.lessons) ? (detail?.lessons as Row[]) : []
+  const detailBiz = detail?.businessUserId as Row | undefined
+  const rejectReason = String(detail?.rejectReason || detail?.adminNote || '')
 
   return (
     <div className="space-y-6">
@@ -181,9 +218,9 @@ export default function ContributionsPage() {
             }}
           >
             <option value="all">All</option>
-            <option value="article">article</option>
-            <option value="host_course">host_course</option>
-            <option value="sponsor_course">sponsor_course</option>
+            <option value="article">Article</option>
+            <option value="host_course">Host course</option>
+            <option value="sponsor_course">Sponsor</option>
           </select>
         </FilterField>
         <FilterField label="Search" className="min-w-[220px] flex-[2]">
@@ -221,33 +258,92 @@ export default function ContributionsPage() {
             <div>
               <h3 className="text-lg font-semibold">{String(detail.title)}</h3>
               <p className="text-sm text-[var(--haze-muted)]">
-                {String(detail.type)} · {String(detail.status)}
+                {typeLabel(detail)} · {String(detail.status)}
+                {detail.createdAt
+                  ? ` · ${new Date(String(detail.createdAt)).toLocaleString()}`
+                  : ''}
               </p>
+              {detailBiz ? (
+                <p className="mt-1 text-xs text-[var(--haze-muted)]">
+                  Business: {String(detailBiz.businessName || detailBiz.fullName || '')}
+                  {detailBiz.businessUserName ? ` (@${String(detailBiz.businessUserName)})` : ''}
+                  {detailBiz.email ? ` · ${String(detailBiz.email)}` : ''}
+                </p>
+              ) : null}
             </div>
             <Button variant="ghost" onClick={() => setDetail(null)}>
               Close
             </Button>
           </div>
           <p className="text-sm whitespace-pre-wrap">{String(detail.description || '')}</p>
+          {detail.attachmentUrl ? (
+            <p className="text-sm">
+              Attachment:{' '}
+              <a
+                href={String(detail.attachmentUrl)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--haze-accent)] hover:underline"
+              >
+                Open / download
+              </a>
+            </p>
+          ) : null}
           {detail.courseId ? (
             <p className="text-xs text-[var(--haze-muted)]">
               Linked course: {String((detail.courseId as Row)?.title || detail.courseId)}
+              {(detail.courseId as Row)?._id ? (
+                <>
+                  {' · '}
+                  <Link
+                    to={ROUTES.EDUCATION_EDIT.replace(
+                      ':courseId',
+                      String((detail.courseId as Row)._id),
+                    )}
+                    className="text-[var(--haze-accent)] hover:underline"
+                  >
+                    Open in CMS
+                  </Link>
+                </>
+              ) : null}
             </p>
           ) : null}
           {detail.createdBlogId ? (
             <p className="text-xs text-[var(--haze-neon)]">
-              Created blog: {String((detail.createdBlogId as Row)?._id || detail.createdBlogId)}
+              Created blog:{' '}
+              <Link
+                to={ROUTES.BLOGS_EDIT.replace(
+                  ':blogId',
+                  String((detail.createdBlogId as Row)?._id || detail.createdBlogId),
+                )}
+                className="hover:underline"
+              >
+                {String((detail.createdBlogId as Row)?._id || detail.createdBlogId)}
+              </Link>
             </p>
           ) : null}
           {detail.createdCourseId ? (
             <p className="text-xs text-[var(--haze-neon)]">
               Created course:{' '}
-              {String((detail.createdCourseId as Row)?.title || detail.createdCourseId)}
+              <Link
+                to={ROUTES.EDUCATION_EDIT.replace(
+                  ':courseId',
+                  String((detail.createdCourseId as Row)?._id || detail.createdCourseId),
+                )}
+                className="hover:underline"
+              >
+                {String((detail.createdCourseId as Row)?.title || detail.createdCourseId)}
+              </Link>
+            </p>
+          ) : null}
+          {String(detail.status) === 'rejected' && rejectReason ? (
+            <p className="rounded-xl border border-[var(--haze-border)] bg-[var(--haze-surface)] px-3 py-2 text-sm text-red-600">
+              Reject reason: {rejectReason}
             </p>
           ) : null}
           {detailLessons.length ? (
             <div className="space-y-2">
-              <p className="text-sm font-medium">Lessons draft</p>
+              <p className="text-sm font-medium">Lessons draft ({detailLessons.length})</p>
               {detailLessons.map((lesson, i) => (
                 <div
                   key={i}

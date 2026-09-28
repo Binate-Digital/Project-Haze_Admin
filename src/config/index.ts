@@ -51,6 +51,7 @@ export const NAV_ITEMS = [
   { to: ROUTES.USERS, label: 'Users' },
   { to: ROUTES.BLOGS, label: 'Blogs' },
   { to: ROUTES.EDUCATION, label: 'Education' },
+  { to: ROUTES.EDUCATION_CONTRIBUTIONS, label: 'Contributions' },
   { to: ROUTES.ADS, label: 'Ads' },
   { to: ROUTES.ORDERS, label: 'Orders' },
   { to: ROUTES.PACKAGES, label: 'Packages' },

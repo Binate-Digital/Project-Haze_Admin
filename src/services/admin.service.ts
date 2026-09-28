@@ -84,10 +84,10 @@ export const adminApi = {
     )
     return unwrap(data)
   },
-  getContributions: async (status?: string) => {
+  getContributions: async (status: string = 'pending') => {
     const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>(
       '/admin/education/contributions',
-      { params: status ? { status } : undefined },
+      { params: { status } },
     )
     return unwrap(data)
   },
