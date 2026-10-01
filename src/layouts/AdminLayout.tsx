@@ -20,6 +20,7 @@ import {
   BarChart3,
   Settings,
   TicketPercent,
+  ListTree,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
@@ -40,6 +41,7 @@ const ICONS: Record<string, typeof LayoutDashboard> = {
   [ROUTES.ORDERS]: ShoppingBag,
   [ROUTES.PACKAGES]: Package,
   [ROUTES.LOYALTY_COUPONS]: TicketPercent,
+  [ROUTES.CANNABIS_PREFERENCES]: ListTree,
   [ROUTES.SETTINGS]: Settings,
   [ROUTES.NOTIFICATIONS]: Bell,
   [ROUTES.REPORTS]: Flag,

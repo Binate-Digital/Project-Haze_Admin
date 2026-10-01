@@ -28,6 +28,7 @@ import AnalyticsPage from '@/pages/analytics/AnalyticsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 import LoyaltyCouponsPage from '@/pages/loyalty-coupons/LoyaltyCouponsPage'
 import LoyaltyCouponFormPage from '@/pages/loyalty-coupons/LoyaltyCouponFormPage'
+import CannabisPreferencesPage from '@/pages/preferences/CannabisPreferencesPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import UpdatePasswordPage from '@/pages/profile/UpdatePasswordPage'
 import { useAuthStore } from '@/store/auth.store'
@@ -74,6 +75,7 @@ export default function App() {
             <Route path={ROUTES.LOYALTY_COUPONS} element={<LoyaltyCouponsPage />} />
             <Route path={ROUTES.LOYALTY_COUPONS_CREATE} element={<LoyaltyCouponFormPage />} />
             <Route path={ROUTES.LOYALTY_COUPONS_EDIT} element={<LoyaltyCouponFormPage />} />
+            <Route path={ROUTES.CANNABIS_PREFERENCES} element={<CannabisPreferencesPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
             <Route path={ROUTES.NOTIFICATIONS} element={<NotificationsPage />} />
             <Route path={ROUTES.REPORTS} element={<ReportsPage />} />

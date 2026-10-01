@@ -253,9 +253,12 @@ export const adminApi = {
   },
 
   // Reports
-  listReports: async (status?: string) => {
+  listReports: async (status?: string, targetType?: string) => {
     const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>('/admin/reports', {
-      params: status ? { status } : undefined,
+      params: {
+        ...(status ? { status } : {}),
+        ...(targetType && targetType !== 'all' ? { targetType } : {}),
+      },
     })
     return unwrap(data)
   },
@@ -264,6 +267,40 @@ export const adminApi = {
     payload: { status: 'reviewed' | 'dismissed' | 'pending'; blockUser?: boolean },
   ) => {
     const { data } = await api.patch<ApiEnvelope<unknown>>(`/admin/reports/${reportId}`, payload)
+    return unwrap(data, data.message)
+  },
+
+  // Cannabis preference catalog
+  listCannabisPreferences: async (all = true) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>(
+      '/admin/cannabis-preferences',
+      { params: all ? { all: '1' } : undefined },
+    )
+    return unwrap(data)
+  },
+  createCannabisPreference: async (payload: {
+    name: string
+    kind?: string
+    sortOrder?: number
+    isActive?: boolean
+  }) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>('/admin/cannabis-preferences', payload)
+    return unwrap(data, data.message)
+  },
+  updateCannabisPreference: async (
+    preferenceId: string,
+    payload: Partial<{ name: string; kind: string; sortOrder: number; isActive: boolean }>,
+  ) => {
+    const { data } = await api.patch<ApiEnvelope<unknown>>(
+      `/admin/cannabis-preferences/${preferenceId}`,
+      payload,
+    )
+    return unwrap(data, data.message)
+  },
+  deleteCannabisPreference: async (preferenceId: string) => {
+    const { data } = await api.delete<ApiEnvelope<unknown>>(
+      `/admin/cannabis-preferences/${preferenceId}`,
+    )
     return unwrap(data, data.message)
   },
 

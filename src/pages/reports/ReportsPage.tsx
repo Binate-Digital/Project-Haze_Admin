@@ -13,6 +13,28 @@ import {
 
 type Row = Record<string, unknown>
 
+function targetLabel(row: Row): string {
+  const t = String(row.targetType || 'user')
+  if (t === 'post') {
+    const post = row.reportedPostId as Row | undefined
+    return `post · ${String(post?.postText || post?._id || row.reportedPostId || '—').slice(0, 40)}`
+  }
+  if (t === 'comment') {
+    const c = row.reportedCommentId as Row | undefined
+    return `comment · ${String(c?.comment || c?._id || '—').slice(0, 40)}`
+  }
+  if (t === 'group') {
+    const g = row.reportedGroupId as Row | undefined
+    return `group · ${String(g?.name || g?.title || g?._id || '—')}`
+  }
+  if (t === 'shop' || t === 'store') {
+    const s = row.reportedStoreId as Row | undefined
+    return `shop · ${String(s?.storeName || s?._id || '—')}`
+  }
+  const u = row.reportedUserId as Row | undefined
+  return `${t} · ${String(u?.businessName || u?.fullName || u?.email || '—')}`
+}
+
 export default function ReportsPage() {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,7 +47,10 @@ export default function ReportsPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const data = await adminApi.listReports(status === 'all' ? undefined : status)
+      const data = await adminApi.listReports(
+        status === 'all' ? undefined : status,
+        targetType,
+      )
       setRows(Array.isArray(data) ? data : [])
       setPage(1)
     } catch (error) {
@@ -38,19 +63,18 @@ export default function ReportsPage() {
   useEffect(() => {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
+  }, [status, targetType])
 
   const filtered = useMemo(() => {
     return rows.filter((row) => {
-      if (targetType !== 'all' && String(row.targetType || 'user') !== targetType) return false
       if (!q.trim()) return true
       const reporter = row.reporterId as Record<string, unknown> | undefined
       const reported = row.reportedUserId as Record<string, unknown> | undefined
-      return `${row.reason || ''} ${row.details || ''} ${reporter?.email || ''} ${reported?.email || ''}`
+      return `${row.reason || ''} ${row.details || ''} ${reporter?.email || ''} ${reported?.email || ''} ${targetLabel(row)}`
         .toLowerCase()
         .includes(q.trim().toLowerCase())
     })
-  }, [rows, targetType, q])
+  }, [rows, q])
 
   const { pageRows, total, safePage } = useClientPagination(filtered, page, pageSize)
 
@@ -74,13 +98,21 @@ export default function ReportsPage() {
           {row.details ? (
             <p className="line-clamp-1 text-xs text-[var(--haze-muted)]">{String(row.details)}</p>
           ) : null}
+          {row.hideFromReporter ? (
+            <p className="text-xs text-[var(--haze-neon)]">Hidden from reporter feed</p>
+          ) : null}
         </div>
       ),
     },
     {
       key: 'type',
-      header: 'Type',
-      render: (row) => <Badge>{String(row.targetType || 'user')}</Badge>,
+      header: 'Type / Target',
+      render: (row) => (
+        <div>
+          <Badge>{String(row.targetType || 'user')}</Badge>
+          <p className="mt-1 max-w-xs text-xs text-[var(--haze-muted)]">{targetLabel(row)}</p>
+        </div>
+      ),
     },
     {
       key: 'status',
@@ -97,7 +129,7 @@ export default function ReportsPage() {
           <p className="text-xs text-[var(--haze-muted)]">
             {String(reporter?.email || reporter?.fullName || '—')}
             <br />
-            {String(reported?.email || reported?.fullName || '—')}
+            {String(reported?.email || reported?.fullName || reported?.businessName || '—')}
           </p>
         )
       },
@@ -126,7 +158,7 @@ export default function ReportsPage() {
     <div>
       <PageHeader
         title="Reports"
-        description="Moderation reports listing."
+        description="Unified moderation: posts, comments, groups, users, businesses, shops."
         actions={
           <Button variant="ghost" onClick={() => void load()}>
             Refresh
@@ -153,8 +185,12 @@ export default function ReportsPage() {
             }}
           >
             <option value="all">All</option>
-            <option value="user">user</option>
             <option value="post">post</option>
+            <option value="comment">comment</option>
+            <option value="group">group</option>
+            <option value="user">user</option>
+            <option value="business">business</option>
+            <option value="shop">shop</option>
           </select>
         </FilterField>
         <FilterField label="Search" className="min-w-[220px] flex-[2]">
@@ -165,7 +201,7 @@ export default function ReportsPage() {
               setQ(e.target.value)
               setPage(1)
             }}
-            placeholder="reason, email"
+            placeholder="reason, email, target"
           />
         </FilterField>
       </FilterBar>
