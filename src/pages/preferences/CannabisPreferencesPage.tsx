@@ -22,6 +22,7 @@ export default function CannabisPreferencesPage() {
   const [name, setName] = useState('')
   const [kind, setKind] = useState('other')
   const [sortOrder, setSortOrder] = useState('0')
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -51,21 +52,44 @@ export default function CannabisPreferencesPage() {
 
   const { pageRows, total, safePage } = useClientPagination(filtered, page, pageSize)
 
-  const create = async () => {
+  const resetForm = () => {
+    setEditingId(null)
+    setName('')
+    setKind('other')
+    setSortOrder('0')
+  }
+
+  const startEdit = (row: Row) => {
+    setEditingId(String(row._id))
+    setName(String(row.name || ''))
+    setKind(String(row.kind || 'other'))
+    setSortOrder(String(row.sortOrder ?? 0))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const save = async () => {
     if (!name.trim()) {
       toast.error('Name is required')
       return
     }
     setSaving(true)
     try {
-      await adminApi.createCannabisPreference({
+      const payload = {
         name: name.trim(),
         kind,
         sortOrder: Number(sortOrder) || 0,
-        isActive: true,
-      })
-      toast.success('Preference created')
-      setName('')
+      }
+      if (editingId) {
+        await adminApi.updateCannabisPreference(editingId, payload)
+        toast.success('Preference updated')
+      } else {
+        await adminApi.createCannabisPreference({
+          ...payload,
+          isActive: true,
+        })
+        toast.success('Preference created')
+      }
+      resetForm()
       await load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -91,6 +115,7 @@ export default function CannabisPreferencesPage() {
     try {
       await adminApi.deleteCannabisPreference(id)
       toast.success('Deleted')
+      if (editingId === id) resetForm()
       await load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -127,6 +152,9 @@ export default function CannabisPreferencesPage() {
       header: 'Actions',
       render: (row) => (
         <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={() => startEdit(row)}>
+            Edit
+          </Button>
           <Button variant="ghost" onClick={() => void toggleActive(row)}>
             {row.isActive ? 'Deactivate' : 'Activate'}
           </Button>
@@ -151,7 +179,9 @@ export default function CannabisPreferencesPage() {
       />
 
       <Card className="space-y-3">
-        <p className="text-sm font-medium">Add option</p>
+        <p className="text-sm font-medium">
+          {editingId ? 'Edit option' : 'Add option'}
+        </p>
         <div className="flex flex-wrap gap-3">
           <input
             className={inputClass}
@@ -171,9 +201,14 @@ export default function CannabisPreferencesPage() {
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
           />
-          <Button onClick={() => void create()} disabled={saving}>
-            {saving ? 'Saving…' : 'Add'}
+          <Button onClick={() => void save()} disabled={saving}>
+            {saving ? 'Saving…' : editingId ? 'Update' : 'Add'}
           </Button>
+          {editingId ? (
+            <Button variant="ghost" onClick={resetForm} disabled={saving}>
+              Cancel
+            </Button>
+          ) : null}
         </div>
       </Card>
 

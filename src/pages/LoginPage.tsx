@@ -99,7 +99,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={form.formState.isSubmitting}
-          className="w-full rounded-xl bg-[var(--haze-neon)] text-[#06200a] font-semibold py-2.5 shadow-[0_0_24px_rgba(57,255,20,0.35)] hover:bg-[var(--haze-neon-soft)] disabled:opacity-60"
+          className="w-full rounded-xl bg-[var(--haze-neon)] text-[var(--haze-cta-text)] font-semibold py-2.5 shadow-[0_0_24px_rgba(255,215,0,0.35)] hover:bg-[var(--haze-neon-soft)] disabled:opacity-60"
         >
           {form.formState.isSubmitting ? 'Signing in…' : 'Sign in'}
         </button>

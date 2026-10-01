@@ -51,17 +51,17 @@ export function Button({
   children: ReactNode
   onClick?: () => void
   type?: 'button' | 'submit'
-  /** primary/success = green CTA · secondary = purple (Edit etc.) · ghost = quiet · danger = red */
+  /** primary/success = gold CTA (#FFD700) · secondary = purple (Edit etc.) · ghost = quiet · danger = red */
   variant?: 'primary' | 'success' | 'secondary' | 'ghost' | 'danger'
   disabled?: boolean
   className?: string
 }) {
   const styles = {
-    // Main CTA / Approve / Create / Save
+    // Main CTA / Add / Update / Submit / Create / Save
     primary:
-      'border border-transparent bg-[var(--haze-neon)] text-[#06200a] font-semibold hover:bg-[var(--haze-neon-soft)]',
+      'border border-transparent bg-[var(--haze-neon)] text-[var(--haze-cta-text)] font-semibold hover:bg-[var(--haze-neon-soft)]',
     success:
-      'border border-transparent bg-[var(--haze-neon)] text-[#06200a] font-semibold hover:bg-[var(--haze-neon-soft)]',
+      'border border-transparent bg-[var(--haze-neon)] text-[var(--haze-cta-text)] font-semibold hover:bg-[var(--haze-neon-soft)]',
     // Edit / Feature / Pause / Cancel — purple frame, white label (readable on dark)
     secondary:
       'border border-[var(--haze-accent-2)] bg-[var(--haze-accent-2)]/25 text-white hover:bg-[var(--haze-accent-2)]/40 hover:text-white',

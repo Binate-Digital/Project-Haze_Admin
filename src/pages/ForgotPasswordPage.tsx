@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={emailForm.formState.isSubmitting}
-            className="w-full rounded-xl bg-[var(--haze-accent)] text-[#102012] font-semibold py-2.5 disabled:opacity-60"
+            className="w-full rounded-xl bg-[var(--haze-accent)] text-[var(--haze-cta-text)] font-semibold py-2.5 disabled:opacity-60"
           >
             Send OTP
           </button>
@@ -136,7 +136,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={otpForm.formState.isSubmitting}
-            className="w-full rounded-xl bg-[var(--haze-accent)] text-[#102012] font-semibold py-2.5 disabled:opacity-60"
+            className="w-full rounded-xl bg-[var(--haze-accent)] text-[var(--haze-cta-text)] font-semibold py-2.5 disabled:opacity-60"
           >
             Verify OTP
           </button>
@@ -174,7 +174,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={passwordForm.formState.isSubmitting}
-            className="w-full rounded-xl bg-[var(--haze-accent)] text-[#102012] font-semibold py-2.5 disabled:opacity-60"
+            className="w-full rounded-xl bg-[var(--haze-accent)] text-[var(--haze-cta-text)] font-semibold py-2.5 disabled:opacity-60"
           >
             Set new password
           </button>
