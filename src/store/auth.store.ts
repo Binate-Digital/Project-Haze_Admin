@@ -1,11 +1,19 @@
 import { create } from 'zustand'
 import { STORAGE_KEYS } from '@/config'
 import type { AdminUser } from '@/types/auth'
+import { isJwtExpired } from '@/utils/jwt'
 
 function activeStorage(): Storage {
   if (localStorage.getItem(STORAGE_KEYS.TOKEN)) return localStorage
   if (sessionStorage.getItem(STORAGE_KEYS.TOKEN)) return sessionStorage
   return localStorage.getItem(STORAGE_KEYS.REMEMBER) === '1' ? localStorage : sessionStorage
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(STORAGE_KEYS.TOKEN)
+  localStorage.removeItem(STORAGE_KEYS.USER)
+  sessionStorage.removeItem(STORAGE_KEYS.TOKEN)
+  sessionStorage.removeItem(STORAGE_KEYS.USER)
 }
 
 function readStoredUser(): AdminUser | null {
@@ -23,8 +31,18 @@ function readStoredToken(): string | null {
   return localStorage.getItem(STORAGE_KEYS.TOKEN) || sessionStorage.getItem(STORAGE_KEYS.TOKEN)
 }
 
-const initialUser = readStoredUser()
-const initialToken = readStoredToken()
+function readValidSession(): { user: AdminUser | null; token: string | null } {
+  const user = readStoredUser()
+  const token = readStoredToken()
+  if (!user || !token) return { user: null, token: null }
+  if (isJwtExpired(token)) {
+    clearAuthStorage()
+    return { user: null, token: null }
+  }
+  return { user, token }
+}
+
+const initial = readValidSession()
 
 type AuthState = {
   user: AdminUser | null
@@ -38,13 +56,12 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   // Hydrate synchronously so refresh keeps the current route (no flash to login/dashboard)
-  user: initialUser,
-  token: initialToken,
-  isAuthenticated: !!(initialUser && initialToken),
+  user: initial.user,
+  token: initial.token,
+  isAuthenticated: !!(initial.user && initial.token),
 
   hydrate: () => {
-    const user = readStoredUser()
-    const token = readStoredToken()
+    const { user, token } = readValidSession()
     set({
       user,
       token,
@@ -60,10 +77,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user, isAuthenticated: !!(user && get().token) })
   },
 
-  logout: () =>
+  logout: () => {
+    clearAuthStorage()
     set({
       user: null,
       token: null,
       isAuthenticated: false,
-    }),
+    })
+  },
 }))
