@@ -171,7 +171,7 @@ export default function LoyaltyCouponsPage() {
         columns={columns}
         rows={pageRows}
         loading={loading}
-        empty="No loyalty coupons yet"
+        emptyMessage="No loyalty coupons yet"
         page={safePage}
         pageSize={pageSize}
         total={total}
@@ -180,6 +180,7 @@ export default function LoyaltyCouponsPage() {
           setPageSize(n)
           setPage(1)
         }}
+        rowKey={(row) => String(row._id)}
       />
     </div>
   )
