@@ -399,4 +399,46 @@ export const adminApi = {
     const { data } = await api.delete<ApiEnvelope<unknown>>(`/admin/loyalty-coupons/${couponId}`)
     return unwrap(data, data.message)
   },
+
+  // ID verification
+  listIdVerifications: async (status = 'pending') => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>(
+      '/admin/id-verifications',
+      { params: { status } },
+    )
+    return unwrap(data)
+  },
+  reviewIdVerification: async (
+    userId: string,
+    payload: { action: 'approve' | 'reject'; note?: string },
+  ) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>(
+      `/admin/id-verifications/${userId}/review`,
+      payload,
+    )
+    return unwrap(data, data.message)
+  },
+
+  // Content schedule
+  listScheduledContent: async () => {
+    const { data } = await api.get<
+      ApiEnvelope<{ blogs: Record<string, unknown>[]; courses: Record<string, unknown>[] }>
+    >('/admin/content/scheduled')
+    return unwrap(data)
+  },
+  publishDueScheduledContent: async () => {
+    const { data } = await api.post<
+      ApiEnvelope<{ blogsPublished: number; coursesPublished: number }>
+    >('/admin/content/publish-due')
+    return unwrap(data, data.message)
+  },
+
+  // Finance
+  getFinanceReport: async (days = 30) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>>>(
+      '/admin/analytics/finance',
+      { params: { days } },
+    )
+    return unwrap(data)
+  },
 }

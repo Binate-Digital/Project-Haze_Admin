@@ -21,6 +21,8 @@ import {
   Settings,
   TicketPercent,
   ListTree,
+  IdCard,
+  CalendarClock,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
@@ -35,7 +37,9 @@ const ICONS: Record<string, typeof LayoutDashboard> = {
   [ROUTES.ANALYTICS]: BarChart3,
   [ROUTES.BUSINESSES]: Building2,
   [ROUTES.USERS]: Users,
+  [ROUTES.ID_VERIFICATIONS]: IdCard,
   [ROUTES.BLOGS]: FileText,
+  [ROUTES.SCHEDULED_CONTENT]: CalendarClock,
   [ROUTES.EDUCATION]: GraduationCap,
   [ROUTES.ADS]: Megaphone,
   [ROUTES.ORDERS]: ShoppingBag,

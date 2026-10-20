@@ -29,6 +29,8 @@ import SettingsPage from '@/pages/settings/SettingsPage'
 import LoyaltyCouponsPage from '@/pages/loyalty-coupons/LoyaltyCouponsPage'
 import LoyaltyCouponFormPage from '@/pages/loyalty-coupons/LoyaltyCouponFormPage'
 import CannabisPreferencesPage from '@/pages/preferences/CannabisPreferencesPage'
+import IdVerificationsPage from '@/pages/id-verifications/IdVerificationsPage'
+import ScheduledContentPage from '@/pages/content/ScheduledContentPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import UpdatePasswordPage from '@/pages/profile/UpdatePasswordPage'
 import { useAuthStore } from '@/store/auth.store'
@@ -60,9 +62,11 @@ export default function App() {
             <Route path={ROUTES.BUSINESS_DETAIL} element={<BusinessDetailPage />} />
             <Route path={ROUTES.USERS} element={<UsersPage />} />
             <Route path={ROUTES.USERS_CREATE_SUBADMIN} element={<CreateSubAdminPage />} />
+            <Route path={ROUTES.ID_VERIFICATIONS} element={<IdVerificationsPage />} />
             <Route path={ROUTES.BLOGS} element={<BlogsPage />} />
             <Route path={ROUTES.BLOGS_CREATE} element={<BlogFormPage />} />
             <Route path={ROUTES.BLOGS_EDIT} element={<BlogFormPage />} />
+            <Route path={ROUTES.SCHEDULED_CONTENT} element={<ScheduledContentPage />} />
             <Route path={ROUTES.EDUCATION} element={<EducationPage />} />
             <Route path={ROUTES.EDUCATION_CREATE} element={<CreateCoursePage />} />
             <Route path={ROUTES.EDUCATION_EDIT} element={<CreateCoursePage />} />

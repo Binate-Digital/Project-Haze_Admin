@@ -24,6 +24,7 @@ export default function BlogFormPage() {
   const [businessUserId, setBusinessUserId] = useState('')
   const [businesses, setBusinesses] = useState<Record<string, unknown>[]>([])
   const [publish, setPublish] = useState(true)
+  const [publishAt, setPublishAt] = useState('')
   const [isFeatured, setIsFeatured] = useState(false)
   const [isTrending, setIsTrending] = useState(false)
   const [existingImage, setExistingImage] = useState<string | null>(null)
@@ -64,6 +65,12 @@ export default function BlogFormPage() {
         setContent(String(row.content || ''))
         setExistingImage(typeof row.blogImage === 'string' ? row.blogImage : null)
         setPublish(Boolean(row.isApproved && row.isActive))
+        if (row.publishAt) {
+          const d = new Date(String(row.publishAt))
+          if (!Number.isNaN(d.getTime())) {
+            setPublishAt(d.toISOString().slice(0, 16))
+          }
+        }
         setIsFeatured(Boolean(row.isFeatured))
         setIsTrending(Boolean(row.isTrending))
         const author = row.businessUserId as Record<string, unknown> | string | undefined
@@ -99,9 +106,10 @@ export default function BlogFormPage() {
       const form = new FormData()
       form.append('title', title.trim())
       form.append('content', content.trim())
-      form.append('publish', publish ? 'true' : 'false')
+      form.append('publish', publish && !publishAt ? 'true' : 'false')
       form.append('isFeatured', isFeatured ? 'true' : 'false')
       form.append('isTrending', isTrending ? 'true' : 'false')
+      if (publishAt) form.append('publishAt', new Date(publishAt).toISOString())
       if (businessUserId) form.append('businessUserId', businessUserId)
       if (coverFiles[0]) form.append('cover', coverFiles[0])
 
@@ -186,6 +194,17 @@ export default function BlogFormPage() {
           <input type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} />
           Publish immediately (approved + active)
         </label>
+        <Field label="Or schedule publish (optional)">
+          <input
+            type="datetime-local"
+            className={fieldClass()}
+            value={publishAt}
+            onChange={(e) => {
+              setPublishAt(e.target.value)
+              if (e.target.value) setPublish(false)
+            }}
+          />
+        </Field>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
