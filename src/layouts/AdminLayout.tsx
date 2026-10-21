@@ -23,6 +23,7 @@ import {
   ListTree,
   IdCard,
   CalendarClock,
+  Gavel,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { authService } from '@/services/auth.service'
@@ -43,6 +44,7 @@ const ICONS: Record<string, typeof LayoutDashboard> = {
   [ROUTES.EDUCATION]: GraduationCap,
   [ROUTES.ADS]: Megaphone,
   [ROUTES.ORDERS]: ShoppingBag,
+  [ROUTES.STOCK_DISPUTES]: Gavel,
   [ROUTES.PACKAGES]: Package,
   [ROUTES.LOYALTY_COUPONS]: TicketPercent,
   [ROUTES.CANNABIS_PREFERENCES]: ListTree,

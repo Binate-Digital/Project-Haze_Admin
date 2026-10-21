@@ -37,6 +37,7 @@ export const ROUTES = {
   LOYALTY_COUPONS_EDIT: '/loyalty-coupons/:couponId/edit',
   ID_VERIFICATIONS: '/id-verifications',
   SCHEDULED_CONTENT: '/scheduled-content',
+  STOCK_DISPUTES: '/stock-disputes',
   PROFILE: '/profile',
   UPDATE_PASSWORD: '/update-password',
 } as const
@@ -59,6 +60,7 @@ export const NAV_ITEMS = [
   { to: ROUTES.EDUCATION_CONTRIBUTIONS, label: 'Contributions' },
   { to: ROUTES.ADS, label: 'Ads' },
   { to: ROUTES.ORDERS, label: 'Orders' },
+  { to: ROUTES.STOCK_DISPUTES, label: 'Stock disputes' },
   { to: ROUTES.PACKAGES, label: 'Packages' },
   { to: ROUTES.LOYALTY_COUPONS, label: 'Loyalty coupons' },
   { to: ROUTES.CANNABIS_PREFERENCES, label: 'Cannabis preferences' },

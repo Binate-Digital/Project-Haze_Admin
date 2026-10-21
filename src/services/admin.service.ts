@@ -441,4 +441,33 @@ export const adminApi = {
     )
     return unwrap(data)
   },
+
+  // Stock escrow disputes
+  listStockDisputes: async (status = 'open') => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>[]>>(
+      '/admin/stock-disputes',
+      { params: { status } },
+    )
+    return unwrap(data)
+  },
+  getStockDispute: async (stockRequestId: string) => {
+    const { data } = await api.get<ApiEnvelope<Record<string, unknown>>>(
+      `/admin/stock-disputes/${stockRequestId}`,
+    )
+    return unwrap(data)
+  },
+  resolveStockDispute: async (
+    stockRequestId: string,
+    payload: {
+      resolution: 'full_release' | 'partial_release' | 'full_refund'
+      amount?: number
+      adminNote?: string
+    },
+  ) => {
+    const { data } = await api.post<ApiEnvelope<unknown>>(
+      `/admin/stock-disputes/${stockRequestId}/resolve`,
+      payload,
+    )
+    return unwrap(data, data.message)
+  },
 }

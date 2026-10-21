@@ -31,6 +31,7 @@ import LoyaltyCouponFormPage from '@/pages/loyalty-coupons/LoyaltyCouponFormPage
 import CannabisPreferencesPage from '@/pages/preferences/CannabisPreferencesPage'
 import IdVerificationsPage from '@/pages/id-verifications/IdVerificationsPage'
 import ScheduledContentPage from '@/pages/content/ScheduledContentPage'
+import StockDisputesPage from '@/pages/stock-disputes/StockDisputesPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import UpdatePasswordPage from '@/pages/profile/UpdatePasswordPage'
 import { useAuthStore } from '@/store/auth.store'
@@ -73,6 +74,7 @@ export default function App() {
             <Route path={ROUTES.EDUCATION_CONTRIBUTIONS} element={<ContributionsPage />} />
             <Route path={ROUTES.ADS} element={<AdsPage />} />
             <Route path={ROUTES.ORDERS} element={<OrdersPage />} />
+            <Route path={ROUTES.STOCK_DISPUTES} element={<StockDisputesPage />} />
             <Route path={ROUTES.PACKAGES} element={<PackagesPage />} />
             <Route path={ROUTES.PACKAGES_CREATE} element={<PackageFormPage />} />
             <Route path={ROUTES.PACKAGES_EDIT} element={<PackageFormPage />} />
